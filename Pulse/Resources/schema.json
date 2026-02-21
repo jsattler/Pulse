@@ -1,0 +1,260 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://isup.sattlerjoshua.com/schema/v1/config.json",
+  "title": "Pulse Configuration",
+  "description": "Configuration schema for the Pulse macOS service monitor.",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference for IDE validation."
+    },
+    "version": {
+      "type": "string",
+      "description": "Schema version identifier.",
+      "const": "1.0"
+    },
+    "serviceProviders": {
+      "type": "array",
+      "description": "Grouped service providers, each containing one or more monitors.",
+      "items": {
+        "$ref": "#/$defs/serviceProvider"
+      },
+      "minItems": 1
+    }
+  },
+  "required": [
+    "version",
+    "serviceProviders"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "serviceProvider": {
+      "type": "object",
+      "description": "A logical grouping of monitors for a single service.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Human-readable name for this service provider.",
+          "minLength": 1
+        },
+        "monitors": {
+          "type": "array",
+          "description": "The monitors associated with this provider.",
+          "items": {
+            "$ref": "#/$defs/monitor"
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "name",
+        "monitors"
+      ],
+      "additionalProperties": false
+    },
+    "monitor": {
+      "type": "object",
+      "description": "A single service monitor. Exactly one type-specific key must be present.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Human-readable name for this monitor.",
+          "minLength": 1
+        },
+        "http": {
+          "$ref": "#/$defs/httpMonitorConfig"
+        },
+        "tcp": {
+          "$ref": "#/$defs/tcpMonitorConfig"
+        },
+        "betterstack": {
+          "$ref": "#/$defs/statusPageMonitorConfig"
+        },
+        "atlassian": {
+          "$ref": "#/$defs/statusPageMonitorConfig"
+        },
+        "statusio": {
+          "$ref": "#/$defs/statusPageMonitorConfig"
+        },
+        "incidentio": {
+          "$ref": "#/$defs/statusPageMonitorConfig"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "oneOf": [
+        {
+          "required": [
+            "http"
+          ]
+        },
+        {
+          "required": [
+            "tcp"
+          ]
+        },
+        {
+          "required": [
+            "betterstack"
+          ]
+        },
+        {
+          "required": [
+            "atlassian"
+          ]
+        },
+        {
+          "required": [
+            "statusio"
+          ]
+        },
+        {
+          "required": [
+            "incidentio"
+          ]
+        }
+      ],
+      "additionalProperties": false
+    },
+    "httpMonitorConfig": {
+      "type": "object",
+      "description": "Configuration for an HTTP health check monitor.",
+      "properties": {
+        "url": {
+          "type": "string",
+          "description": "The URL to probe.",
+          "minLength": 1
+        },
+        "method": {
+          "type": "string",
+          "description": "HTTP method to use.",
+          "enum": [
+            "GET",
+            "HEAD",
+            "POST",
+            "PUT",
+            "DELETE",
+            "OPTIONS"
+          ],
+          "default": "GET"
+        },
+        "checkFrequency": {
+          "type": "integer",
+          "description": "Interval between checks, in seconds.",
+          "minimum": 5
+        },
+        "expectedStatusCodes": {
+          "type": "array",
+          "description": "Expected HTTP status codes.",
+          "items": {
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 599
+          },
+          "default": [
+            200
+          ]
+        },
+        "maxLatency": {
+          "type": "integer",
+          "description": "Maximum acceptable response time in milliseconds.",
+          "minimum": 1
+        },
+        "failureThreshold": {
+          "type": "integer",
+          "description": "Consecutive failures before the monitor is considered down.",
+          "minimum": 1
+        },
+        "requestHeaders": {
+          "type": "array",
+          "description": "Custom request headers to include.",
+          "items": {
+            "$ref": "#/$defs/requestHeader"
+          }
+        }
+      },
+      "required": [
+        "url"
+      ],
+      "additionalProperties": false
+    },
+    "requestHeader": {
+      "type": "object",
+      "description": "A single HTTP request header.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Header name.",
+          "minLength": 1
+        },
+        "value": {
+          "type": "string",
+          "description": "Header value."
+        }
+      },
+      "required": [
+        "name",
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    "tcpMonitorConfig": {
+      "type": "object",
+      "description": "Configuration for a TCP connectivity check monitor.",
+      "properties": {
+        "host": {
+          "type": "string",
+          "description": "The host to connect to.",
+          "minLength": 1
+        },
+        "port": {
+          "type": "integer",
+          "description": "The port to connect to.",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "checkFrequency": {
+          "type": "integer",
+          "description": "Interval between checks, in seconds.",
+          "minimum": 5
+        },
+        "failureThreshold": {
+          "type": "integer",
+          "description": "Consecutive failures before the monitor is considered down.",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "host",
+        "port"
+      ],
+      "additionalProperties": false
+    },
+    "statusPageMonitorConfig": {
+      "type": "object",
+      "description": "Configuration for managed status page providers (Better Stack, Atlassian, Status.io, incident.io).",
+      "properties": {
+        "url": {
+          "type": "string",
+          "description": "The status page URL.",
+          "minLength": 1
+        },
+        "format": {
+          "type": "string",
+          "description": "The feed format to consume.",
+          "enum": [
+            "rss",
+            "json",
+            "atom"
+          ]
+        }
+      },
+      "required": [
+        "url"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

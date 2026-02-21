@@ -1,0 +1,100 @@
+# Xcode
+#
+# gitignore contributors: add more if needed
+
+## User settings
+xcuserdata/
+
+## Xcode 8 and earlier
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+
+## Derived Data
+DerivedData/
+
+## Architecture-specific
+*.ipa
+*.xcarchive
+
+## Playgrounds
+timeline.xctimeline
+playground.xcworkspace
+
+# Swift Package Manager
+#
+# Add this line if you want to avoid committing the cached source files of Swift Package Manager dependencies.
+# .build/
+
+# CocoaPods
+#
+# We recommend against committing the Pods directory or your .xcworkspace if you use CocoaPods.
+# Pods/
+# *.xcworkspace
+
+# Carthage
+#
+# Add this line if you want to avoid committing the cached source files of Carthage dependencies.
+# Carthage/Build/
+
+# AccuRev
+.accurev/
+
+# Fastlane
+#
+# It is recommended to not store the packages in the repository.
+# fastlane/report.xml
+# fastlane/Preview.html
+# fastlane/screenshots/**/*.png
+# fastlane/test_output
+
+# Code Signing
+*.cert
+*.mobileprovision
+*.provisionprofile
+
+# External dependencies
+#
+# If you are using Carthage, Swift Package Manager, or CocoaPods, you may want to ignore certain files.
+# .build/
+# Carthage/
+# Pods/
+
+# macOS
+#
+# gitignore contributors: add more if needed
+
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Icon must end with two 
+Icon
+
+
+# Thumbnails
+._*
+
+# Files that might appear in the root of a volume
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Directories potentially created on remote AFP share
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Other
+*.swp
+*.lock
+*.log
+
+# Snippets
+snippets/
