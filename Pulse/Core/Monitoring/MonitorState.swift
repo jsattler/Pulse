@@ -32,7 +32,7 @@ struct MonitorState: Identifiable, Sendable, Equatable {
     /// Maximum number of recent results to retain.
     static let maxRecentResults = 20
 
-    /// Consecutive failure count (status != .up).
+    /// Consecutive failure count (status != .operational).
     var consecutiveFailures: Int
 
     /// The monitor type for display badges.

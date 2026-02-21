@@ -8,7 +8,7 @@ import SwiftUI
 struct HeartbeatGraphView: View {
     var results: [CheckResult]
     var maxPoints: Int = MonitorState.maxRecentResults
-    var color: Color = MonitorStatus.up.color
+    var color: Color = MonitorStatus.operational.color
 
     /// Graph dimensions.
     private let graphWidth: CGFloat = 80
@@ -57,7 +57,7 @@ struct HeartbeatGraphView: View {
         let slotDuration = windowDuration / Double(count - 1)
 
         // The status to use for slots before any data exists.
-        let fallbackStatus = results.first?.status ?? .up
+        let fallbackStatus = results.first?.status ?? .operational
 
         return (0..<count).map { index in
             let x = CGFloat(index) * stepX
@@ -77,9 +77,9 @@ struct HeartbeatGraphView: View {
     /// Maps a status to a vertical fraction (0 = bottom, 1 = top).
     private func yFraction(for status: MonitorStatus) -> CGFloat {
         switch status {
-        case .up: 0.8
-        case .degraded: 0.45
-        case .down, .unknown: 0.1
+        case .operational: 0.8
+        case .degraded, .maintenance: 0.45
+        case .downtime, .unknown: 0.1
         }
     }
 

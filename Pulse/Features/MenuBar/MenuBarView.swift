@@ -183,7 +183,7 @@ struct StatusCircle: View {
 
             Image(systemName: status.iconName)
                 .font(.system(size: size * 0.45, weight: .medium))
-                .foregroundStyle(status == .unknown ? .white : status.color)
+                .foregroundStyle(status.color)
         }
     }
 }

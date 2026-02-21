@@ -15,7 +15,7 @@ struct HTTPMonitorProvider: MonitorProvider {
     func check() async throws -> CheckResult {
         guard let url = URL(string: config.url) else {
             return CheckResult(
-                status: .down,
+                status: .downtime,
                 timestamp: .now,
                 message: "Invalid URL: \(config.url)"
             )
@@ -38,7 +38,7 @@ struct HTTPMonitorProvider: MonitorProvider {
         } catch {
             logger.warning("HTTP check failed for \(config.url): \(error.localizedDescription)")
             return CheckResult(
-                status: .down,
+                status: .downtime,
                 timestamp: .now,
                 message: error.localizedDescription
             )
@@ -49,7 +49,7 @@ struct HTTPMonitorProvider: MonitorProvider {
 
         guard let httpResponse = response as? HTTPURLResponse else {
             return CheckResult(
-                status: .down,
+                status: .downtime,
                 responseTime: responseTime,
                 timestamp: .now,
                 message: "Response was not HTTP."
@@ -68,11 +68,11 @@ struct HTTPMonitorProvider: MonitorProvider {
 
         let status: MonitorStatus
         if !codeMatch {
-            status = .down
+            status = .downtime
         } else if latencyExceeded {
             status = .degraded
         } else {
-            status = .up
+            status = .operational
         }
 
         let message: String? = if !codeMatch {

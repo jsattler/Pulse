@@ -23,24 +23,26 @@ struct PulseApp: App {
     }
 
     init() {
-        configManager.load()
-        configManager.startWatching()
-
         // Capture locals so the Task closure doesn't capture `self`
         // (capturing `self` in App.init is not allowed with @State).
         let configManager = configManager
         let monitorEngine = monitorEngine
         let notchController = notchController
 
+        // Re-apply configuration whenever the file watcher reloads it.
+        configManager.onChange = { (config: PulseConfiguration) in
+            monitorEngine.apply(config)
+            notchController.configuration = config
+        }
+
+        configManager.load()
+        configManager.startWatching()
+
         // Hop to MainActor to read observable properties without subscribing
         // the scene body — if done inside body{} SwiftUI re-evaluates the
         // entire scene on every state change, causing panel flicker.
         Task { @MainActor in
-            if let config = configManager.configuration {
-                monitorEngine.apply(config)
-            }
             notchController.monitorEngine = monitorEngine
-            notchController.configuration = configManager.configuration
             notchController.show()
         }
     }

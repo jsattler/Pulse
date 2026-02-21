@@ -2,11 +2,14 @@ import AppKit
 import SwiftUI
 
 /// The health status of a monitor.
+///
+/// Cases align with the BetterStack status page API values.
 enum MonitorStatus: String, Sendable, Comparable {
     case unknown
-    case up
+    case operational
     case degraded
-    case down
+    case downtime
+    case maintenance
 
     /// SwiftUI display color for this status.
     var color: Color {
@@ -18,9 +21,10 @@ enum MonitorStatus: String, Sendable, Comparable {
     var nsColor: NSColor {
         switch self {
         case .unknown: NSColor(srgbRed: 1.0, green: 0.0, blue: 0.0, alpha: 1)
-        case .up: NSColor(srgbRed: 0.20, green: 0.84, blue: 0.29, alpha: 1)
+        case .operational: NSColor(srgbRed: 0.20, green: 0.84, blue: 0.29, alpha: 1)
         case .degraded: NSColor(srgbRed: 1.0, green: 0.62, blue: 0.04, alpha: 1)
-        case .down: NSColor(srgbRed: 1.0, green: 0.23, blue: 0.19, alpha: 1)
+        case .downtime: NSColor(srgbRed: 1.0, green: 0.23, blue: 0.19, alpha: 1)
+        case .maintenance: NSColor(srgbRed: 0.35, green: 0.56, blue: 0.97, alpha: 1)
         }
     }
 
@@ -41,9 +45,10 @@ enum MonitorStatus: String, Sendable, Comparable {
     var label: String {
         switch self {
         case .unknown: "Unknown"
-        case .up: "Operational"
+        case .operational: "Operational"
         case .degraded: "Degraded"
-        case .down: "Interruption"
+        case .downtime: "Downtime"
+        case .maintenance: "Maintenance"
         }
     }
 
@@ -51,9 +56,10 @@ enum MonitorStatus: String, Sendable, Comparable {
     var iconName: String {
         switch self {
         case .unknown: "questionmark"
-        case .up: "arrowshape.up"
+        case .operational: "arrowshape.up"
         case .degraded: "arrowshape.forward"
-        case .down: "arrowshape.down"
+        case .downtime: "arrowshape.down"
+        case .maintenance: "wrench"
         }
     }
 
@@ -62,13 +68,23 @@ enum MonitorStatus: String, Sendable, Comparable {
     private var severity: Int {
         switch self {
         case .unknown: 0
-        case .up: 1
-        case .degraded: 2
-        case .down: 3
+        case .operational: 1
+        case .maintenance: 2
+        case .degraded: 3
+        case .downtime: 4
         }
     }
 
     static func < (lhs: MonitorStatus, rhs: MonitorStatus) -> Bool {
         lhs.severity < rhs.severity
+    }
+}
+
+// MARK: - Decodable
+
+extension MonitorStatus: Decodable {
+    init(from decoder: Decoder) throws {
+        let rawValue = try decoder.singleValueContainer().decode(String.self)
+        self = MonitorStatus(rawValue: rawValue) ?? .unknown
     }
 }

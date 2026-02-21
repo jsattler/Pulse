@@ -17,6 +17,7 @@ final class MonitorEngine {
         let allStates = statesByProvider.values.flatMap { $0 }
         guard !allStates.isEmpty else { return .unknown }
         return allStates.map(\.status).max() ?? .unknown
+
     }
 
     private let logger = Logger(subsystem: "com.sattlerjoshua.Pulse", category: "MonitorEngine")
@@ -132,7 +133,7 @@ final class MonitorEngine {
                 result = try await provider.check()
             } catch {
                 result = CheckResult(
-                    status: .down,
+                    status: .downtime,
                     timestamp: .now,
                     message: error.localizedDescription
                 )
@@ -158,11 +159,11 @@ final class MonitorEngine {
             do {
                 results = try await provider.check()
             } catch {
-                // On failure, set a single "down" entry.
+                // On failure, set a single "downtime" entry.
                 let errorResult = ComponentCheckResult(
                     componentName: key.monitorName,
                     result: CheckResult(
-                        status: .down,
+                        status: .downtime,
                         timestamp: .now,
                         message: error.localizedDescription
                     )
@@ -205,7 +206,7 @@ final class MonitorEngine {
             statesByProvider[key.providerName]![index].status = result.status
             statesByProvider[key.providerName]![index].lastResult = result
             appendRecentResult(result, at: &statesByProvider[key.providerName]![index])
-            if result.status == .up {
+            if result.status == .operational {
                 statesByProvider[key.providerName]![index].consecutiveFailures = 0
             } else {
                 statesByProvider[key.providerName]![index].consecutiveFailures += 1
@@ -234,7 +235,7 @@ final class MonitorEngine {
 
             let existing = previousStates.first { $0.id == stateID }
             let failures: Int
-            if component.result.status == .up {
+            if component.result.status == .operational {
                 failures = 0
             } else {
                 failures = (existing?.consecutiveFailures ?? 0) + 1

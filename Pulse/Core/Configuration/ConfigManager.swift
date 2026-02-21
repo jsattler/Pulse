@@ -17,6 +17,9 @@ final class ConfigManager {
     /// Whether the configuration has been loaded successfully at least once.
     var isLoaded: Bool { configuration != nil }
 
+    /// Called on the main actor after a configuration is successfully loaded.
+    @ObservationIgnored var onChange: ((PulseConfiguration) -> Void)?
+
     private let fileURL: URL
     private let logger = Logger(subsystem: "com.sattlerjoshua.Pulse", category: "ConfigManager")
     @ObservationIgnored nonisolated(unsafe) private var watchTask: Task<Void, Never>?
@@ -53,6 +56,7 @@ final class ConfigManager {
             configuration = decoded
             lastError = nil
             logger.info("Configuration loaded successfully from \(self.fileURL.path())")
+            onChange?(decoded)
         } catch let error as ConfigurationError {
             lastError = error
             logger.error("Configuration error: \(error.localizedDescription)")
@@ -150,6 +154,17 @@ final class ConfigManager {
                                 url: "https://jsonplaceholder.typicode.com/posts/1",
                                 method: "GET",
                                 expectedStatusCodes: [200]
+                            )
+                        )
+                    ]
+                ),
+                ServiceProvider(
+                    name: "Better Stack",
+                    monitors: [
+                        Monitor(
+                            name: "Status Page",
+                            betterstack: StatusPageMonitorConfig(
+                                url: "https://status.betterstack.com"
                             )
                         )
                     ]
