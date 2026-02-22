@@ -15,12 +15,14 @@ struct NotchGlowView: View {
     @State private var isPulsing = false
 
     var body: some View {
-        let extraTop: CGFloat = 40
+        let extraTop: CGFloat = 32
         RoundedRectangle(cornerRadius: cornerRadius)
             .fill(glowColor)
             .frame(width: notchWidth + 8, height: notchHeight + extraTop)
             .offset(y: -extraTop / 2)
+            .padding(blurRadius)
             .blur(radius: blurRadius)
+            .padding(-blurRadius)
             .opacity(isPulsing ? 1 : 0.4)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .onAppear {

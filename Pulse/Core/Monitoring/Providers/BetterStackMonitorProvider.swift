@@ -11,7 +11,12 @@ struct BetterStackMonitorProvider: AggregatedMonitorProvider {
     private let session: URLSession
     private let logger = Logger(subsystem: "com.sattlerjoshua.Pulse", category: "BetterStackMonitor")
 
-    init(config: StatusPageMonitorConfig, session: URLSession = .shared) {
+    /// Uses an ephemeral session to prevent `URLSession.shared` from caching
+    /// the `alt-svc: h3` header that BetterStack returns. Without this,
+    /// the shared session attempts an HTTP/3 (QUIC) connection upgrade in the
+    /// background, which times out and produces `nw_read_request_report`
+    /// "Operation timed out" warnings.
+    init(config: StatusPageMonitorConfig, session: URLSession = URLSession(configuration: .ephemeral)) {
         self.config = config
         self.session = session
     }
@@ -33,7 +38,8 @@ struct BetterStackMonitorProvider: AggregatedMonitorProvider {
             ]
         }
 
-        let request = URLRequest(url: url)
+        var request = URLRequest(url: url)
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
         let data: Data
 
         do {

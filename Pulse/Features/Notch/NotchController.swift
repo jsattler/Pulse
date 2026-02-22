@@ -91,9 +91,11 @@ final class NotchController {
 
     private func showGlowPanel(screen: NSScreen, notchRect: NSRect) {
         // Margin for the blur spread (blur radius ~10pt needs room).
+        // Bottom margin must be large enough for the blur to fully fade out.
         let margin: CGFloat = 24
+        let bottomMargin: CGFloat = 48
         let panelWidth = notchWidth + margin * 2
-        let panelHeight = hardwareNotchHeight + margin
+        let panelHeight = hardwareNotchHeight + bottomMargin
 
         // Top of panel = top of screen.
         let x = notchRect.midX - panelWidth / 2
