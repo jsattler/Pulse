@@ -114,7 +114,14 @@ final class MonitorEngine {
                 await self?.pollAggregated(provider: bsProvider, key: key, monitorType: monitorType, frequency: frequency)
             }
 
-        case .tcp, .atlassian, .statusio, .incidentio:
+        case .atlassian:
+            guard let config = monitor.atlassian else { return }
+            let atlassianProvider = AtlassianMonitorProvider(config: config)
+            pollTasks[key] = Task { [weak self] in
+                await self?.pollAggregated(provider: atlassianProvider, key: key, monitorType: monitorType, frequency: frequency)
+            }
+
+        case .tcp, .statusio, .incidentio:
             // Not yet implemented — show unknown state.
             initializeSingleState(key: key, monitorType: monitorType)
             logger.info("Monitor type '\(monitorType.rawValue)' not yet implemented for '\(monitor.name)'.")

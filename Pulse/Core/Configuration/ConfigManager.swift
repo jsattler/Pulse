@@ -86,7 +86,7 @@ final class ConfigManager {
                 guard let type = monitor.resolvedType else {
                     throw .validationFailed(
                         "Monitor '\(monitor.name)' in provider '\(provider.name)' "
-                        + "must specify exactly one type (http, tcp, betterstack, atlassian, statusio, incidentio)."
+                            + "must specify exactly one type (http, tcp, betterstack, atlassian, statusio, incidentio)."
                     )
                 }
                 switch type {
@@ -120,38 +120,12 @@ final class ConfigManager {
             version: "1.0",
             serviceProviders: [
                 ServiceProvider(
-                    name: "Example",
-                    monitors: [
-                        Monitor(
-                            name: "HTTP Check",
-                            http: HTTPMonitorConfig(
-                                url: "https://example.com",
-                                method: "GET",
-                                expectedStatusCodes: [200]
-                            )
-                        )
-                    ]
-                ),
-                ServiceProvider(
                     name: "Hacker News",
                     monitors: [
                         Monitor(
                             name: "Homepage",
                             http: HTTPMonitorConfig(
                                 url: "https://news.ycombinator.com/",
-                                method: "GET",
-                                expectedStatusCodes: [200]
-                            )
-                        )
-                    ]
-                ),
-                ServiceProvider(
-                    name: "JSONPlaceholder",
-                    monitors: [
-                        Monitor(
-                            name: "Posts API",
-                            http: HTTPMonitorConfig(
-                                url: "https://jsonplaceholder.typicode.com/posts/1",
                                 method: "GET",
                                 expectedStatusCodes: [200]
                             )
@@ -168,7 +142,18 @@ final class ConfigManager {
                             )
                         )
                     ]
-                )
+                ),
+                ServiceProvider(
+                    name: "Anthropic",
+                    monitors: [
+                        Monitor(
+                            name: "Claude Status",
+                            atlassian: StatusPageMonitorConfig(
+                                url: "https://status.claude.com"
+                            )
+                        )
+                    ]
+                ),
             ]
         )
 
