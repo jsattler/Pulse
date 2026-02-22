@@ -5,6 +5,7 @@ struct PulseApp: App {
     @State private var configManager = ConfigManager()
     @State private var monitorEngine = MonitorEngine()
     @State private var notchController = NotchController()
+    @State private var glowSettings = GlowSettings()
 
     var body: some Scene {
         MenuBarExtra {
@@ -18,7 +19,7 @@ struct PulseApp: App {
         .menuBarExtraStyle(.window)
 
         Settings {
-            SettingsView()
+            SettingsView(glowSettings: glowSettings)
         }
     }
 
@@ -28,6 +29,7 @@ struct PulseApp: App {
         let configManager = configManager
         let monitorEngine = monitorEngine
         let notchController = notchController
+        let glowSettings = glowSettings
 
         // Re-apply configuration whenever the file watcher reloads it.
         configManager.onChange = { (config: PulseConfiguration) in
@@ -43,6 +45,7 @@ struct PulseApp: App {
         // entire scene on every state change, causing panel flicker.
         Task { @MainActor in
             notchController.monitorEngine = monitorEngine
+            notchController.glowSettings = glowSettings
             notchController.show()
         }
     }

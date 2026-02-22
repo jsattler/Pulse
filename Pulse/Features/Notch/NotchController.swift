@@ -19,6 +19,9 @@ final class NotchController {
     /// The current configuration providing service provider metadata.
     var configuration: PulseConfiguration?
 
+    /// User-configurable glow preferences.
+    var glowSettings: GlowSettings?
+
     private var glowPanel: NSPanel?
     private var overlayPanel: NSPanel?
     private let logger = Logger(subsystem: "com.sattlerjoshua.Pulse", category: "NotchController")
@@ -104,7 +107,8 @@ final class NotchController {
         let glowView = NotchGlowPanelView(
             controller: self,
             notchWidth: notchWidth,
-            notchHeight: hardwareNotchHeight
+            notchHeight: hardwareNotchHeight,
+            glowSettings: glowSettings
         )
 
         let panel = makePanel(
@@ -184,18 +188,45 @@ private struct NotchGlowPanelView: View {
     let controller: NotchController
     let notchWidth: CGFloat
     let notchHeight: CGFloat
+    var glowSettings: GlowSettings?
+
+    private var aggregateStatus: MonitorStatus {
+        controller.monitorEngine?.aggregateStatus ?? .unknown
+    }
 
     private var glowColor: Color {
-        controller.monitorEngine?.aggregateStatus.color ?? .gray
+        aggregateStatus.color
+    }
+
+    /// Whether the glow should be visible based on user preferences.
+    private var isGlowVisible: Bool {
+        guard let settings = glowSettings else { return true }
+        switch settings.hideGlow {
+        case .always: return false
+        case .whenOperational: return aggregateStatus != .operational
+        case .never: return true
+        }
+    }
+
+    /// Whether the pulsing animation should be active.
+    private var shouldPulse: Bool {
+        guard let settings = glowSettings else { return true }
+        switch settings.disablePulse {
+        case .always: return false
+        case .whenOperational: return aggregateStatus != .operational
+        case .never: return true
+        }
     }
 
     var body: some View {
         NotchGlowView(
             glowColor: glowColor,
             notchWidth: notchWidth,
-            notchHeight: notchHeight
+            notchHeight: notchHeight,
+            isPulseEnabled: shouldPulse
         )
-        .opacity(controller.isOverlayExpanded ? 0 : 1)
+        .opacity(controller.isOverlayExpanded || !isGlowVisible ? 0 : 1)
         .animation(.easeInOut(duration: 0.2), value: controller.isOverlayExpanded)
+        .animation(.easeInOut(duration: 0.3), value: isGlowVisible)
     }
 }
