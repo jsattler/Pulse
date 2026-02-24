@@ -1,0 +1,97 @@
+import SwiftUI
+
+/// Lists all configured service providers with add, edit, and delete support.
+///
+/// Presents add and edit forms as sheets to avoid toolbar conflicts with the
+/// settings `TabView`.
+struct ServicesSettingsView: View {
+    var configManager: ConfigManager
+
+    @State private var editingProvider: ServiceProvider?
+    @State private var isAddingProvider = false
+    @State private var errorMessage: String?
+
+    private var providers: [ServiceProvider] {
+        configManager.configuration?.serviceProviders ?? []
+    }
+
+    var body: some View {
+        Form {
+            Section {
+                if providers.isEmpty {
+                    Text("No services configured.")
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(providers) { provider in
+                        Button {
+                            editingProvider = provider
+                        } label: {
+                            SettingsServiceRow(provider: provider)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .contentShape(.rect)
+                        }
+                        .buttonStyle(.plain)
+                        .contextMenu {
+                            Button("Delete", role: .destructive) {
+                                deleteProvider(named: provider.name)
+                            }
+                        }
+                    }
+                }
+            } header: {
+                Text("Services")
+            } footer: {
+                Button("Add Service", systemImage: "plus") {
+                    isAddingProvider = true
+                }
+                .buttonStyle(.borderless)
+            }
+        }
+        .formStyle(.grouped)
+        .sheet(isPresented: $isAddingProvider) {
+            ServiceDetailView(configManager: configManager, mode: .add)
+        }
+        .sheet(item: $editingProvider) { provider in
+            ServiceDetailView(
+                configManager: configManager,
+                mode: .edit(providerName: provider.name)
+            )
+        }
+        .alert("Error", isPresented: .constant(errorMessage != nil)) {
+            Button("OK") { errorMessage = nil }
+        } message: {
+            if let errorMessage {
+                Text(errorMessage)
+            }
+        }
+    }
+
+    private func deleteProvider(named name: String) {
+        do {
+            try configManager.removeServiceProvider(named: name)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+}
+
+// MARK: - Service Provider Row
+
+/// A single row in the services list showing the provider name and monitor count.
+struct SettingsServiceRow: View {
+    let provider: ServiceProvider
+
+    var body: some View {
+        VStack(alignment: .leading) {
+            Text(provider.name)
+            Text(monitorSummary)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var monitorSummary: String {
+        let count = provider.monitors.count
+        return count == 1 ? "1 monitor" : "\(count) monitors"
+    }
+}
