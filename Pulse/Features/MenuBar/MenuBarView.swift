@@ -98,10 +98,17 @@ struct ServiceProviderRow: View {
                         faviconStore: faviconStore
                     )
 
-                    Text(provider.name)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(provider.name)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+
+                        Text(aggregateStatus.label)
+                            .font(.system(size: 11))
+                            .foregroundStyle(aggregateStatus == .operational ? .secondary : aggregateStatus.color)
+                            .lineLimit(1)
+                    }
 
                     Spacer()
 

@@ -27,6 +27,7 @@ final class GlowSettings {
     private enum Key {
         static let hideGlow = "hideGlow"
         static let disablePulse = "disablePulse"
+        static let silencedProviders = "silencedProviders"
     }
 
     private let defaults: UserDefaults
@@ -44,6 +45,7 @@ final class GlowSettings {
         // Hydrate stored fields from persisted values.
         _hideGlow = GlowCondition(rawValue: defaults.string(forKey: Key.hideGlow) ?? "") ?? .never
         _disablePulse = GlowCondition(rawValue: defaults.string(forKey: Key.disablePulse) ?? "") ?? .whenOperational
+        _silencedProviders = Set(defaults.stringArray(forKey: Key.silencedProviders) ?? [])
     }
 
     // MARK: - Settings
@@ -57,5 +59,26 @@ final class GlowSettings {
     /// a static glow at full brightness instead.
     var disablePulse: GlowCondition {
         didSet { defaults.set(disablePulse.rawValue, forKey: Key.disablePulse) }
+    }
+
+    /// Provider names whose visual alerts are suppressed.
+    /// Silenced providers still poll but their status is excluded
+    /// from the aggregate glow colour.
+    var silencedProviders: Set<String> {
+        didSet { defaults.set(Array(silencedProviders), forKey: Key.silencedProviders) }
+    }
+
+    /// Whether a given provider is currently silenced.
+    func isSilenced(_ providerName: String) -> Bool {
+        silencedProviders.contains(providerName)
+    }
+
+    /// Toggles the silenced state for a provider.
+    func toggleSilence(for providerName: String) {
+        if silencedProviders.contains(providerName) {
+            silencedProviders.remove(providerName)
+        } else {
+            silencedProviders.insert(providerName)
+        }
     }
 }

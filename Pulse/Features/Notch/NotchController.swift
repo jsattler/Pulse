@@ -72,22 +72,9 @@ final class NotchController {
         overlayPanel = nil
     }
 
-    func setOverlayExpanded(_ expanded: Bool, contentHeight: CGFloat = 0) {
+    func setOverlayExpanded(_ expanded: Bool) {
         isOverlayExpanded = expanded
         guard let panel = overlayPanel else { return }
-
-        if expanded, contentHeight > 0 {
-            let expandedWidth = notchWidth + 300
-            // contentHeight is the measured total overlay height
-            // (notch spacer + service list + padding).
-            let expandedHeight = contentHeight
-            overlayExpandedFrame = NSRect(
-                x: notchMidX - expandedWidth / 2,
-                y: screenFrame.maxY - expandedHeight,
-                width: expandedWidth,
-                height: expandedHeight
-            )
-        }
 
         let frame = expanded ? overlayExpandedFrame : overlayCollapsedFrame
         panel.setFrame(frame, display: true, animate: false)
@@ -131,7 +118,7 @@ final class NotchController {
         notchMidX = notchRect.midX
 
         let expandedWidth = notchRect.width + 300
-        let expandedHeight = menuBarHeight + 200
+        let expandedHeight = menuBarHeight + 600
 
         overlayCollapsedFrame = NSRect(
             x: notchMidX - notchWidth / 2,
@@ -193,30 +180,41 @@ private struct NotchGlowPanelView: View {
     let notchHeight: CGFloat
     var glowSettings: GlowSettings?
 
-    private var aggregateStatus: MonitorStatus {
-        controller.monitorEngine?.aggregateStatus ?? .unknown
+    /// Aggregate status, excluding silenced providers.
+    /// Returns `nil` when there is no engine or every provider is
+    /// silenced — meaning there is nothing to report.
+    private var aggregateStatus: MonitorStatus? {
+        guard let engine = controller.monitorEngine else { return nil }
+        let silenced = glowSettings?.silencedProviders ?? []
+        let allStates = engine.statesByProvider
+            .filter { !silenced.contains($0.key) }
+            .values.flatMap { $0 }
+        guard !allStates.isEmpty else { return nil }
+        return allStates.map(\.status).max() ?? .unknown
     }
 
     private var glowColor: Color {
-        aggregateStatus.color
+        aggregateStatus?.color ?? .clear
     }
 
     /// Whether the glow should be visible based on user preferences.
     private var isGlowVisible: Bool {
+        guard let status = aggregateStatus else { return false }
         guard let settings = glowSettings else { return true }
         switch settings.hideGlow {
         case .always: return false
-        case .whenOperational: return aggregateStatus != .operational
+        case .whenOperational: return status != .operational
         case .never: return true
         }
     }
 
     /// Whether the pulsing animation should be active.
     private var shouldPulse: Bool {
+        guard let status = aggregateStatus else { return false }
         guard let settings = glowSettings else { return true }
         switch settings.disablePulse {
         case .always: return false
-        case .whenOperational: return aggregateStatus != .operational
+        case .whenOperational: return status != .operational
         case .never: return true
         }
     }

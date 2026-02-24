@@ -8,6 +8,8 @@ struct NotchServiceRow: View {
     var providerName: String
     var monitorStates: [MonitorState]
     var websiteURL: URL?
+    var statusPageURL: URL?
+    var glowSettings: GlowSettings?
     var faviconStore: FaviconStore?
     @State private var isExpanded = false
     @State private var isHovering = false
@@ -26,6 +28,7 @@ struct NotchServiceRow: View {
                         size: 18,
                         faviconStore: faviconStore
                     )
+                    .padding(.trailing, 4)
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text(providerName)
@@ -40,6 +43,8 @@ struct NotchServiceRow: View {
                     }
 
                     Spacer()
+
+                    actionButtons
 
                     HeartbeatGraphView(
                         results: aggregateRecentResults,
@@ -73,6 +78,43 @@ struct NotchServiceRow: View {
                     }
                 }
                 .padding(.leading, 12)
+            }
+        }
+    }
+
+    // MARK: - Actions
+
+    private var isSilenced: Bool {
+        glowSettings?.isSilenced(providerName) ?? false
+    }
+
+    @ViewBuilder
+    private var actionButtons: some View {
+        HStack(spacing: 4) {
+            Button {
+                glowSettings?.toggleSilence(for: providerName)
+            } label: {
+                Image(systemName: isSilenced ? "bell.slash.fill" : "bell.fill")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.white.opacity(isSilenced ? 0.8 : 0.4))
+                    .frame(width: 26, height: 26)
+                    .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .help(isSilenced ? "Unmute alerts" : "Mute alerts")
+
+            if let statusPageURL {
+                Button {
+                    NSWorkspace.shared.open(statusPageURL)
+                } label: {
+                    Image(systemName: "arrow.up.right.square")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.white.opacity(0.4))
+                        .frame(width: 26, height: 26)
+                        .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .help("Open status page")
             }
         }
     }

@@ -103,7 +103,7 @@ struct NotchOverlayView: View {
                 switch phase {
                 case .active:
                     guard !isExpanded else { return }
-                    controller.setOverlayExpanded(true, contentHeight: expandedHeight)
+                    controller.setOverlayExpanded(true)
                     withAnimation(.easeOut(duration: 0.3)) {
                         isExpanded = true
                     }
@@ -130,11 +130,8 @@ struct NotchOverlayView: View {
             }
             .onPreferenceChange(ContentHeightKey.self) { height in
                 guard height > 0, height != measuredContentHeight else { return }
-                measuredContentHeight = height
-                Task { @MainActor in
-                    if isExpanded {
-                        controller.setOverlayExpanded(true, contentHeight: menuBarHeight + height + contentInsetBottom)
-                    }
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    measuredContentHeight = height
                 }
             }
             .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
@@ -157,6 +154,8 @@ struct NotchOverlayView: View {
                         providerName: provider.name,
                         monitorStates: controller.monitorEngine?.statesByProvider[provider.name] ?? [],
                         websiteURL: controller.monitorEngine?.websiteURLsByProvider[provider.name],
+                        statusPageURL: controller.monitorEngine?.statusPageURLsByProvider[provider.name],
+                        glowSettings: controller.glowSettings,
                         faviconStore: controller.faviconStore
                     )
                 }

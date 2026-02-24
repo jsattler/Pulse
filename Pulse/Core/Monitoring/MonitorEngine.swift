@@ -16,6 +16,10 @@ final class MonitorEngine {
     /// auto-discovered from status page API responses.
     private(set) var websiteURLsByProvider: [String: URL] = [:]
 
+    /// Status page URLs per provider, derived from the first status page
+    /// monitor's configuration URL when the provider uses a status page type.
+    private(set) var statusPageURLsByProvider: [String: URL] = [:]
+
     /// Favicon store for triggering fetches when website URLs are resolved.
     var faviconStore: FaviconStore?
 
@@ -57,6 +61,20 @@ final class MonitorEngine {
                 faviconStore?.ensureFavicon(for: url, providerName: provider.name)
             }
 
+            // Derive status page URL from the first status page monitor.
+            if statusPageURLsByProvider[provider.name] == nil {
+                for monitor in provider.monitors {
+                    let urlString: String? = monitor.atlassian?.url
+                        ?? monitor.betterstack?.url
+                        ?? monitor.statusio?.url
+                        ?? monitor.incidentio?.url
+                    if let urlString, let url = URL(string: urlString) {
+                        statusPageURLsByProvider[provider.name] = url
+                        break
+                    }
+                }
+            }
+
             for monitor in provider.monitors {
                 let key = PollKey(providerName: provider.name, monitorName: monitor.name)
                 newKeys.insert(key)
@@ -89,10 +107,13 @@ final class MonitorEngine {
             }
         }
 
-        // Clean up website URL entries for removed providers.
+        // Clean up URL entries for removed providers.
         let activeProviderNames = Set(config.serviceProviders.map(\.name))
         for name in websiteURLsByProvider.keys where !activeProviderNames.contains(name) {
             websiteURLsByProvider[name] = nil
+        }
+        for name in statusPageURLsByProvider.keys where !activeProviderNames.contains(name) {
+            statusPageURLsByProvider[name] = nil
         }
 
         activeConfig = config
@@ -106,6 +127,7 @@ final class MonitorEngine {
         pollTasks.removeAll()
         statesByProvider.removeAll()
         websiteURLsByProvider.removeAll()
+        statusPageURLsByProvider.removeAll()
         activeConfig = nil
     }
 
