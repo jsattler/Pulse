@@ -31,7 +31,7 @@ struct ServiceProvider: Codable, Sendable, Identifiable, Equatable {
 /// Exactly one of the type-specific properties (`http`, `tcp`, `betterstack`,
 /// `atlassian`, `statusio`, `incidentio`) must be set. The presence of that
 /// key determines the monitor type.
-struct Monitor: Codable, Sendable, Identifiable, Equatable {
+struct Monitor: Codable, Sendable, Identifiable, Hashable {
     var id: String { name }
 
     /// Human-readable name for this monitor.
@@ -70,19 +70,44 @@ struct Monitor: Codable, Sendable, Identifiable, Equatable {
 // MARK: - Monitor Type
 
 /// The supported monitor types, derived from which key is present on a `Monitor`.
-enum MonitorType: String, Codable, Sendable {
+enum MonitorType: String, Codable, Sendable, CaseIterable, Identifiable {
     case http
     case tcp
     case betterstack
     case atlassian
     case statusio
     case incidentio
+
+    var id: String { rawValue }
+
+    /// Human-readable label for display in the UI.
+    var label: String {
+        switch self {
+        case .http: "HTTP"
+        case .tcp: "TCP"
+        case .betterstack: "Better Stack"
+        case .atlassian: "Atlassian Statuspage"
+        case .statusio: "Status.io"
+        case .incidentio: "incident.io"
+        }
+    }
+
+    /// Monitor types that have a fully implemented provider.
+    static let implemented: [MonitorType] = [.http, .betterstack, .atlassian]
+
+    /// Whether this type monitors a status page rather than probing directly.
+    var isStatusPage: Bool {
+        switch self {
+        case .http, .tcp: false
+        case .betterstack, .atlassian, .statusio, .incidentio: true
+        }
+    }
 }
 
 // MARK: - HTTP Monitor
 
 /// Configuration for an HTTP health check monitor.
-struct HTTPMonitorConfig: Codable, Sendable, Equatable {
+struct HTTPMonitorConfig: Codable, Sendable, Hashable {
     /// The URL to probe.
     var url: String
 
@@ -106,7 +131,7 @@ struct HTTPMonitorConfig: Codable, Sendable, Equatable {
 }
 
 /// A single HTTP request header.
-struct RequestHeader: Codable, Sendable, Equatable {
+struct RequestHeader: Codable, Sendable, Hashable {
     var name: String
     var value: String
 }
@@ -114,7 +139,7 @@ struct RequestHeader: Codable, Sendable, Equatable {
 // MARK: - TCP Monitor
 
 /// Configuration for a TCP connectivity check monitor.
-struct TCPMonitorConfig: Codable, Sendable, Equatable {
+struct TCPMonitorConfig: Codable, Sendable, Hashable {
     /// The host to connect to.
     var host: String
 
@@ -132,7 +157,7 @@ struct TCPMonitorConfig: Codable, Sendable, Equatable {
 
 /// Configuration for managed status page providers
 /// (Better Stack, Atlassian, Status.io, incident.io).
-struct StatusPageMonitorConfig: Codable, Sendable, Equatable {
+struct StatusPageMonitorConfig: Codable, Sendable, Hashable {
     /// The status page URL.
     var url: String
 

@@ -19,7 +19,7 @@ struct PulseApp: App {
         .menuBarExtraStyle(.window)
 
         Settings {
-            SettingsView(glowSettings: glowSettings)
+            SettingsView(configManager: configManager, glowSettings: glowSettings)
         }
     }
 

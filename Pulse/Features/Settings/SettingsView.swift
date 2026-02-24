@@ -3,6 +3,25 @@ import ServiceManagement
 
 /// The settings window for Pulse.
 struct SettingsView: View {
+    var configManager: ConfigManager
+    var glowSettings: GlowSettings
+
+    var body: some View {
+        TabView {
+            Tab("General", systemImage: "gear") {
+                GeneralSettingsView(glowSettings: glowSettings)
+            }
+
+            Tab("Services", systemImage: "server.rack") {
+                ServicesSettingsView(configManager: configManager)
+            }
+        }
+        .frame(width: 500, height: 400)
+    }
+}
+
+/// General settings tab containing launch-at-login and notch glow options.
+struct GeneralSettingsView: View {
     @State private var launchAtLoginManager = LaunchAtLoginManager()
     var glowSettings: GlowSettings
 
@@ -30,6 +49,5 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 400, height: 240)
     }
 }
