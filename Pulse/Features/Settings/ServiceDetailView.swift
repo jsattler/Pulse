@@ -11,6 +11,7 @@ struct ServiceDetailView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var name: String = ""
+    @State private var websiteURL: String = ""
     @State private var monitors: [Monitor] = []
     @State private var isAddingMonitor = false
     @State private var editingMonitorIndex: Int?
@@ -34,6 +35,8 @@ struct ServiceDetailView: View {
         Form {
             Section("Service") {
                 TextField("Name", text: $name)
+                TextField("Website URL", text: $websiteURL)
+                    .help("Used to display a favicon. Auto-derived for status page monitors.")
             }
 
             Section {
@@ -134,6 +137,7 @@ struct ServiceDetailView: View {
                   .first(where: { $0.name == providerName })
         else { return }
         name = provider.name
+        websiteURL = provider.websiteURL ?? ""
         monitors = provider.monitors
     }
 
@@ -148,8 +152,10 @@ struct ServiceDetailView: View {
     }
 
     private func save() {
+        let trimmedURL = websiteURL.trimmingCharacters(in: .whitespaces)
         let provider = ServiceProvider(
             name: name.trimmingCharacters(in: .whitespaces),
+            websiteURL: trimmedURL.isEmpty ? nil : trimmedURL,
             monitors: monitors
         )
 

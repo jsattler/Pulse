@@ -22,6 +22,9 @@ final class NotchController {
     /// User-configurable glow preferences.
     var glowSettings: GlowSettings?
 
+    /// Shared favicon store for displaying cached favicons.
+    var faviconStore: FaviconStore?
+
     private var glowPanel: NSPanel?
     private var overlayPanel: NSPanel?
     private let logger = Logger(subsystem: "com.sattlerjoshua.Pulse", category: "NotchController")

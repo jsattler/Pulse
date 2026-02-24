@@ -6,6 +6,7 @@ import SwiftUI
 /// settings `TabView`.
 struct ServicesSettingsView: View {
     var configManager: ConfigManager
+    var faviconStore: FaviconStore?
 
     @State private var editingProvider: ServiceProvider?
     @State private var isAddingProvider = false
@@ -26,7 +27,7 @@ struct ServicesSettingsView: View {
                         Button {
                             editingProvider = provider
                         } label: {
-                            SettingsServiceRow(provider: provider)
+                            SettingsServiceRow(provider: provider, faviconStore: faviconStore)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .contentShape(.rect)
                         }
@@ -80,13 +81,25 @@ struct ServicesSettingsView: View {
 /// A single row in the services list showing the provider name and monitor count.
 struct SettingsServiceRow: View {
     let provider: ServiceProvider
+    var faviconStore: FaviconStore?
 
     var body: some View {
-        VStack(alignment: .leading) {
-            Text(provider.name)
-            Text(monitorSummary)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+        HStack(spacing: 8) {
+            FaviconView(
+                websiteURL: provider.websiteURL.flatMap { URL(string: $0) },
+                providerName: provider.name,
+                statusColor: .secondary,
+                size: 18,
+                showsGlow: false,
+                faviconStore: faviconStore
+            )
+
+            VStack(alignment: .leading) {
+                Text(provider.name)
+                Text(monitorSummary)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 

@@ -4,6 +4,7 @@ import SwiftUI
 struct MenuBarView: View {
     var configManager: ConfigManager
     var monitorEngine: MonitorEngine
+    var faviconStore: FaviconStore?
 
     @Environment(\.openSettings) private var openSettings
 
@@ -40,7 +41,9 @@ struct MenuBarView: View {
             ForEach(providers) { provider in
                 ServiceProviderRow(
                     provider: provider,
-                    monitorStates: monitorEngine.statesByProvider[provider.name] ?? []
+                    monitorStates: monitorEngine.statesByProvider[provider.name] ?? [],
+                    websiteURL: monitorEngine.websiteURLsByProvider[provider.name],
+                    faviconStore: faviconStore
                 )
             }
         }
@@ -74,6 +77,8 @@ struct MenuBarView: View {
 struct ServiceProviderRow: View {
     var provider: ServiceProvider
     var monitorStates: [MonitorState]
+    var websiteURL: URL?
+    var faviconStore: FaviconStore?
 
     @State private var isExpanded = false
     @State private var isHovered = false
@@ -87,7 +92,11 @@ struct ServiceProviderRow: View {
                 }
             } label: {
                 HStack(spacing: 12) {
-                    StatusCircle(status: aggregateStatus)
+                    FaviconView(
+                        websiteURL: websiteURL,
+                        statusColor: aggregateStatus.color,
+                        faviconStore: faviconStore
+                    )
 
                     Text(provider.name)
                         .font(.system(size: 13, weight: .medium))

@@ -16,21 +16,23 @@ struct AtlassianMonitorProvider: AggregatedMonitorProvider {
         self.session = session
     }
 
-    func check() async throws -> [ComponentCheckResult] {
+    func check() async throws -> AggregatedCheckResult {
         let endpointURL = componentsEndpointURL()
 
         guard let url = endpointURL else {
             logger.warning("Invalid Atlassian status page URL: \(config.url)")
-            return [
-                ComponentCheckResult(
-                    componentName: config.url,
-                    result: CheckResult(
-                        status: .downtime,
-                        timestamp: .now,
-                        message: "Invalid URL: \(config.url)"
-                    )
-                ),
-            ]
+            return AggregatedCheckResult(
+                components: [
+                    ComponentCheckResult(
+                        componentName: config.url,
+                        result: CheckResult(
+                            status: .downtime,
+                            timestamp: .now,
+                            message: "Invalid URL: \(config.url)"
+                        )
+                    ),
+                ]
+            )
         }
 
         let request = URLRequest(url: url)
@@ -52,18 +54,23 @@ struct AtlassianMonitorProvider: AggregatedMonitorProvider {
             throw error
         }
 
+        let websiteURL = URL(string: response.page.url)
+
         guard !response.components.isEmpty else {
-            return [
-                ComponentCheckResult(
-                    componentName: response.page.name,
-                    result: CheckResult(status: .unknown, timestamp: .now)
-                ),
-            ]
+            return AggregatedCheckResult(
+                components: [
+                    ComponentCheckResult(
+                        componentName: response.page.name,
+                        result: CheckResult(status: .unknown, timestamp: .now)
+                    ),
+                ],
+                websiteURL: websiteURL
+            )
         }
 
         logger.debug("Atlassian check for \(config.url): \(response.components.count) components")
 
-        return response.components.compactMap { component -> ComponentCheckResult? in
+        let components = response.components.compactMap { component -> ComponentCheckResult? in
             // Skip group headers — they have no meaningful status of their own.
             if component.group == true { return nil }
 
@@ -75,6 +82,8 @@ struct AtlassianMonitorProvider: AggregatedMonitorProvider {
                 result: CheckResult(status: status, timestamp: .now)
             )
         }
+
+        return AggregatedCheckResult(components: components, websiteURL: websiteURL)
     }
 
     // MARK: - Helpers
@@ -112,6 +121,7 @@ private struct AtlassianComponentsResponse: Decodable {
     struct Page: Decodable {
         var id: String
         var name: String
+        var url: String
     }
 
     struct Component: Decodable {

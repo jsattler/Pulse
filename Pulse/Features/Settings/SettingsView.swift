@@ -5,6 +5,7 @@ import ServiceManagement
 struct SettingsView: View {
     var configManager: ConfigManager
     var glowSettings: GlowSettings
+    var faviconStore: FaviconStore?
 
     var body: some View {
         TabView {
@@ -13,7 +14,7 @@ struct SettingsView: View {
             }
 
             Tab("Services", systemImage: "server.rack") {
-                ServicesSettingsView(configManager: configManager)
+                ServicesSettingsView(configManager: configManager, faviconStore: faviconStore)
             }
         }
         .frame(width: 500, height: 400)
