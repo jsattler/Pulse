@@ -21,21 +21,23 @@ struct BetterStackMonitorProvider: AggregatedMonitorProvider {
         self.session = session
     }
 
-    func check() async throws -> [ComponentCheckResult] {
+    func check() async throws -> AggregatedCheckResult {
         let endpointURL = jsonEndpointURL()
 
         guard let url = endpointURL else {
             logger.warning("Invalid BetterStack status page URL: \(config.url)")
-            return [
-                ComponentCheckResult(
-                    componentName: config.url,
-                    result: CheckResult(
-                        status: .downtime,
-                        timestamp: .now,
-                        message: "Invalid URL: \(config.url)"
-                    )
-                ),
-            ]
+            return AggregatedCheckResult(
+                components: [
+                    ComponentCheckResult(
+                        componentName: config.url,
+                        result: CheckResult(
+                            status: .downtime,
+                            timestamp: .now,
+                            message: "Invalid URL: \(config.url)"
+                        )
+                    ),
+                ]
+            )
         }
 
         var request = URLRequest(url: url)
@@ -58,22 +60,26 @@ struct BetterStackMonitorProvider: AggregatedMonitorProvider {
             throw error
         }
 
+        let websiteURL = response.data.attributes.companyURL.flatMap { URL(string: $0) }
         let resources = response.included.filter { $0.type == "status_page_resource" }
 
         guard !resources.isEmpty else {
             // No resources found — report aggregate state from the page itself.
             let status = response.data.attributes.aggregateState ?? .unknown
-            return [
-                ComponentCheckResult(
-                    componentName: response.data.attributes.companyName ?? config.url,
-                    result: CheckResult(status: status, timestamp: .now)
-                ),
-            ]
+            return AggregatedCheckResult(
+                components: [
+                    ComponentCheckResult(
+                        componentName: response.data.attributes.companyName ?? config.url,
+                        result: CheckResult(status: status, timestamp: .now)
+                    ),
+                ],
+                websiteURL: websiteURL
+            )
         }
 
         logger.debug("BetterStack check for \(config.url): \(resources.count) resources")
 
-        return resources.compactMap { resource -> ComponentCheckResult? in
+        let components = resources.compactMap { resource -> ComponentCheckResult? in
             guard let name = resource.attributes.publicName,
                   let status = resource.attributes.status,
                   status != .unknown
@@ -83,6 +89,8 @@ struct BetterStackMonitorProvider: AggregatedMonitorProvider {
                 result: CheckResult(status: status, timestamp: .now)
             )
         }
+
+        return AggregatedCheckResult(components: components, websiteURL: websiteURL)
     }
 
     // MARK: - Helpers
@@ -112,10 +120,12 @@ private struct BetterStackResponse: Decodable {
 
     struct StatusPageAttributes: Decodable {
         var companyName: String?
+        var companyURL: String?
         var aggregateState: MonitorStatus?
 
         enum CodingKeys: String, CodingKey {
             case companyName = "company_name"
+            case companyURL = "company_url"
             case aggregateState = "aggregate_state"
         }
     }

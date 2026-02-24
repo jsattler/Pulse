@@ -20,6 +20,10 @@ struct ServiceProvider: Codable, Sendable, Identifiable, Equatable {
     /// Human-readable name for this service provider.
     var name: String
 
+    /// Optional website URL used to derive a favicon for display.
+    /// For status page monitors the favicon is auto-derived when not set.
+    var websiteURL: String?
+
     /// The monitors associated with this provider.
     var monitors: [Monitor]
 }

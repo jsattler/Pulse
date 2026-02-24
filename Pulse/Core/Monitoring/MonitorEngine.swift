@@ -12,6 +12,13 @@ final class MonitorEngine {
     /// including expanded components from aggregated providers.
     private(set) var statesByProvider: [String: [MonitorState]] = [:]
 
+    /// Website URLs per provider, from the config's `websiteURL` or
+    /// auto-discovered from status page API responses.
+    private(set) var websiteURLsByProvider: [String: URL] = [:]
+
+    /// Favicon store for triggering fetches when website URLs are resolved.
+    var faviconStore: FaviconStore?
+
     /// The worst status across all monitors.
     var aggregateStatus: MonitorStatus {
         let allStates = statesByProvider.values.flatMap { $0 }
@@ -43,6 +50,13 @@ final class MonitorEngine {
         var newKeys = Set<PollKey>()
 
         for provider in config.serviceProviders {
+            // Seed website URL from config.
+            if let urlString = provider.websiteURL,
+               let url = URL(string: urlString) {
+                websiteURLsByProvider[provider.name] = url
+                faviconStore?.ensureFavicon(for: url, providerName: provider.name)
+            }
+
             for monitor in provider.monitors {
                 let key = PollKey(providerName: provider.name, monitorName: monitor.name)
                 newKeys.insert(key)
@@ -75,6 +89,12 @@ final class MonitorEngine {
             }
         }
 
+        // Clean up website URL entries for removed providers.
+        let activeProviderNames = Set(config.serviceProviders.map(\.name))
+        for name in websiteURLsByProvider.keys where !activeProviderNames.contains(name) {
+            websiteURLsByProvider[name] = nil
+        }
+
         activeConfig = config
     }
 
@@ -85,6 +105,7 @@ final class MonitorEngine {
         }
         pollTasks.removeAll()
         statesByProvider.removeAll()
+        websiteURLsByProvider.removeAll()
         activeConfig = nil
     }
 
@@ -162,9 +183,9 @@ final class MonitorEngine {
         frequency: Duration
     ) async {
         while !Task.isCancelled {
-            let results: [ComponentCheckResult]
+            let aggregated: AggregatedCheckResult
             do {
-                results = try await provider.check()
+                aggregated = try await provider.check()
             } catch {
                 // On failure, set a single "downtime" entry.
                 let errorResult = ComponentCheckResult(
@@ -175,11 +196,19 @@ final class MonitorEngine {
                         message: error.localizedDescription
                     )
                 )
-                results = [errorResult]
+                aggregated = AggregatedCheckResult(components: [errorResult])
             }
 
             await MainActor.run { [weak self] in
-                self?.updateAggregatedState(key: key, monitorType: monitorType, results: results)
+                guard let self else { return }
+                updateAggregatedState(key: key, monitorType: monitorType, results: aggregated.components)
+
+                // Auto-discover website URL when the config doesn't provide one.
+                if websiteURLsByProvider[key.providerName] == nil,
+                   let url = aggregated.websiteURL {
+                    websiteURLsByProvider[key.providerName] = url
+                    faviconStore?.ensureFavicon(for: url, providerName: key.providerName)
+                }
             }
 
             try? await Task.sleep(for: frequency)

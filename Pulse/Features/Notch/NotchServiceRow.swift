@@ -7,6 +7,8 @@ import SwiftUI
 struct NotchServiceRow: View {
     var providerName: String
     var monitorStates: [MonitorState]
+    var websiteURL: URL?
+    var faviconStore: FaviconStore?
     @State private var isExpanded = false
     @State private var isHovering = false
 
@@ -18,7 +20,12 @@ struct NotchServiceRow: View {
                 }
             } label: {
                 HStack(spacing: 8) {
-                    NotchStatusDot(color: aggregateColor)
+                    FaviconView(
+                        websiteURL: websiteURL,
+                        statusColor: aggregateColor,
+                        size: 18,
+                        faviconStore: faviconStore
+                    )
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text(providerName)

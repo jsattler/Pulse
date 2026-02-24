@@ -23,10 +23,7 @@
       "minItems": 1
     }
   },
-  "required": [
-    "version",
-    "serviceProviders"
-  ],
+  "required": ["version", "serviceProviders"],
   "additionalProperties": false,
   "$defs": {
     "serviceProvider": {
@@ -38,6 +35,11 @@
           "description": "Human-readable name for this service provider.",
           "minLength": 1
         },
+        "websiteURL": {
+          "type": "string",
+          "description": "Optional website URL used to derive a favicon for display. Auto-derived for status page monitors.",
+          "format": "uri"
+        },
         "monitors": {
           "type": "array",
           "description": "The monitors associated with this provider.",
@@ -47,10 +49,7 @@
           "minItems": 1
         }
       },
-      "required": [
-        "name",
-        "monitors"
-      ],
+      "required": ["name", "monitors"],
       "additionalProperties": false
     },
     "monitor": {
@@ -81,39 +80,25 @@
           "$ref": "#/$defs/statusPageMonitorConfig"
         }
       },
-      "required": [
-        "name"
-      ],
+      "required": ["name"],
       "oneOf": [
         {
-          "required": [
-            "http"
-          ]
+          "required": ["http"]
         },
         {
-          "required": [
-            "tcp"
-          ]
+          "required": ["tcp"]
         },
         {
-          "required": [
-            "betterstack"
-          ]
+          "required": ["betterstack"]
         },
         {
-          "required": [
-            "atlassian"
-          ]
+          "required": ["atlassian"]
         },
         {
-          "required": [
-            "statusio"
-          ]
+          "required": ["statusio"]
         },
         {
-          "required": [
-            "incidentio"
-          ]
+          "required": ["incidentio"]
         }
       ],
       "additionalProperties": false
@@ -130,14 +115,7 @@
         "method": {
           "type": "string",
           "description": "HTTP method to use.",
-          "enum": [
-            "GET",
-            "HEAD",
-            "POST",
-            "PUT",
-            "DELETE",
-            "OPTIONS"
-          ],
+          "enum": ["GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS"],
           "default": "GET"
         },
         "checkFrequency": {
@@ -153,9 +131,7 @@
             "minimum": 100,
             "maximum": 599
           },
-          "default": [
-            200
-          ]
+          "default": [200]
         },
         "maxLatency": {
           "type": "integer",
@@ -175,9 +151,7 @@
           }
         }
       },
-      "required": [
-        "url"
-      ],
+      "required": ["url"],
       "additionalProperties": false
     },
     "requestHeader": {
@@ -194,10 +168,7 @@
           "description": "Header value."
         }
       },
-      "required": [
-        "name",
-        "value"
-      ],
+      "required": ["name", "value"],
       "additionalProperties": false
     },
     "tcpMonitorConfig": {
@@ -226,10 +197,7 @@
           "minimum": 1
         }
       },
-      "required": [
-        "host",
-        "port"
-      ],
+      "required": ["host", "port"],
       "additionalProperties": false
     },
     "statusPageMonitorConfig": {
@@ -244,16 +212,10 @@
         "format": {
           "type": "string",
           "description": "The feed format to consume.",
-          "enum": [
-            "rss",
-            "json",
-            "atom"
-          ]
+          "enum": ["rss", "json", "atom"]
         }
       },
-      "required": [
-        "url"
-      ],
+      "required": ["url"],
       "additionalProperties": false
     }
   }

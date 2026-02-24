@@ -6,12 +6,14 @@ struct PulseApp: App {
     @State private var monitorEngine = MonitorEngine()
     @State private var notchController = NotchController()
     @State private var glowSettings = GlowSettings()
+    @State private var faviconStore = FaviconStore()
 
     var body: some Scene {
         MenuBarExtra {
             MenuBarView(
                 configManager: configManager,
-                monitorEngine: monitorEngine
+                monitorEngine: monitorEngine,
+                faviconStore: faviconStore
             )
         } label: {
             MenuBarStatusDot(monitorEngine: monitorEngine)
@@ -19,7 +21,7 @@ struct PulseApp: App {
         .menuBarExtraStyle(.window)
 
         Settings {
-            SettingsView(configManager: configManager, glowSettings: glowSettings)
+            SettingsView(configManager: configManager, glowSettings: glowSettings, faviconStore: faviconStore)
         }
     }
 
@@ -30,6 +32,9 @@ struct PulseApp: App {
         let monitorEngine = monitorEngine
         let notchController = notchController
         let glowSettings = glowSettings
+        let faviconStore = faviconStore
+
+        monitorEngine.faviconStore = faviconStore
 
         // Re-apply configuration whenever the file watcher reloads it.
         configManager.onChange = { (config: PulseConfiguration) in
@@ -46,6 +51,7 @@ struct PulseApp: App {
         Task { @MainActor in
             notchController.monitorEngine = monitorEngine
             notchController.glowSettings = glowSettings
+            notchController.faviconStore = faviconStore
             notchController.show()
         }
     }

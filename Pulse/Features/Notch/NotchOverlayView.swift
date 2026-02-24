@@ -155,7 +155,9 @@ struct NotchOverlayView: View {
                 ForEach(serviceProviders) { provider in
                     NotchServiceRow(
                         providerName: provider.name,
-                        monitorStates: controller.monitorEngine?.statesByProvider[provider.name] ?? []
+                        monitorStates: controller.monitorEngine?.statesByProvider[provider.name] ?? [],
+                        websiteURL: controller.monitorEngine?.websiteURLsByProvider[provider.name],
+                        faviconStore: controller.faviconStore
                     )
                 }
             }

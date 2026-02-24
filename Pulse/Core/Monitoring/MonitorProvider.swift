@@ -1,3 +1,5 @@
+import Foundation
+
 /// A provider that checks a single endpoint and returns one result.
 protocol MonitorProvider: Sendable {
     /// Performs a health check and returns the result.
@@ -10,5 +12,15 @@ protocol MonitorProvider: Sendable {
 /// from a single URL. Each component becomes a flat monitor row in the UI.
 protocol AggregatedMonitorProvider: Sendable {
     /// Performs a health check and returns results per component.
-    func check() async throws -> [ComponentCheckResult]
+    func check() async throws -> AggregatedCheckResult
+}
+
+/// The combined result of an aggregated status page check.
+struct AggregatedCheckResult: Sendable, Equatable {
+    /// Per-component check results.
+    var components: [ComponentCheckResult]
+
+    /// A website URL discovered from the status page response,
+    /// used to derive a favicon via the Google Favicon API.
+    var websiteURL: URL?
 }
