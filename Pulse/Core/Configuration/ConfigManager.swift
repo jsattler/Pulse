@@ -4,7 +4,7 @@ import os
 
 /// Manages loading, validating, and watching the Pulse configuration file.
 ///
-/// The default configuration path is `~/.config/isup/config.json`.
+/// The default configuration path is `~/.config/pulse/config.json`.
 @Observable
 @MainActor
 final class ConfigManager {
@@ -34,10 +34,134 @@ final class ConfigManager {
 
     // MARK: - Default Path
 
-    /// Default configuration file location: `~/.config/isup/config.json`.
+    /// Default configuration file location: `~/.config/pulse/config.json`.
     static var defaultConfigURL: URL {
         URL.homeDirectory
-            .appending(path: ".config/isup/config.json")
+            .appending(path: ".config/pulse/config.json")
+    }
+
+    /// The URL of the directory containing the configuration file.
+    var configDirectoryURL: URL {
+        fileURL.deletingLastPathComponent()
+    }
+
+    // MARK: - Saving
+
+    /// Writes the current configuration to disk as pretty-printed JSON.
+    func save() throws {
+        guard let configuration else {
+            throw ConfigurationError.validationFailed("No configuration loaded to save.")
+        }
+
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        let data = try encoder.encode(configuration)
+        try data.write(to: fileURL, options: .atomic)
+        logger.info("Configuration saved to \(self.fileURL.path())")
+    }
+
+    // MARK: - Service Provider CRUD
+
+    /// Adds a new service provider and saves.
+    func addServiceProvider(_ provider: ServiceProvider) throws {
+        guard var config = configuration else { return }
+        config.serviceProviders.append(provider)
+        try validate(config)
+        configuration = config
+        try save()
+        onChange?(config)
+    }
+
+    /// Updates an existing service provider by matching its original name, then saves.
+    func updateServiceProvider(originalName: String, with updated: ServiceProvider) throws {
+        guard var config = configuration else { return }
+        guard let index = config.serviceProviders.firstIndex(where: { $0.name == originalName }) else {
+            throw ConfigurationError.validationFailed("Service provider '\(originalName)' not found.")
+        }
+        config.serviceProviders[index] = updated
+        try validate(config)
+        configuration = config
+        try save()
+        onChange?(config)
+    }
+
+    /// Removes a service provider by name and saves.
+    func removeServiceProvider(named name: String) throws {
+        guard var config = configuration else { return }
+        config.serviceProviders.removeAll { $0.name == name }
+        try validate(config)
+        configuration = config
+        try save()
+        onChange?(config)
+    }
+
+    // MARK: - Monitor CRUD
+
+    /// Adds a monitor to a service provider and saves.
+    func addMonitor(_ monitor: Monitor, toProviderNamed providerName: String) throws {
+        guard var config = configuration else { return }
+        guard let index = config.serviceProviders.firstIndex(where: { $0.name == providerName }) else {
+            throw ConfigurationError.validationFailed("Service provider '\(providerName)' not found.")
+        }
+        config.serviceProviders[index].monitors.append(monitor)
+        try validate(config)
+        configuration = config
+        try save()
+        onChange?(config)
+    }
+
+    /// Updates an existing monitor within a service provider and saves.
+    func updateMonitor(
+        originalName: String,
+        with updated: Monitor,
+        inProviderNamed providerName: String
+    ) throws {
+        guard var config = configuration else { return }
+        guard let providerIndex = config.serviceProviders.firstIndex(where: { $0.name == providerName }) else {
+            throw ConfigurationError.validationFailed("Service provider '\(providerName)' not found.")
+        }
+        guard let monitorIndex = config.serviceProviders[providerIndex].monitors.firstIndex(where: { $0.name == originalName }) else {
+            throw ConfigurationError.validationFailed("Monitor '\(originalName)' not found in provider '\(providerName)'.")
+        }
+        config.serviceProviders[providerIndex].monitors[monitorIndex] = updated
+        try validate(config)
+        configuration = config
+        try save()
+        onChange?(config)
+    }
+
+    /// Removes a monitor from a service provider and saves.
+    func removeMonitor(named monitorName: String, fromProviderNamed providerName: String) throws {
+        guard var config = configuration else { return }
+        guard let providerIndex = config.serviceProviders.firstIndex(where: { $0.name == providerName }) else {
+            throw ConfigurationError.validationFailed("Service provider '\(providerName)' not found.")
+        }
+        config.serviceProviders[providerIndex].monitors.removeAll { $0.name == monitorName }
+        try validate(config)
+        configuration = config
+        try save()
+        onChange?(config)
+    }
+
+    // MARK: - Import
+
+    /// Imports a configuration from a user-selected file, replacing the current config.
+    func importConfig(from sourceURL: URL) throws {
+        let data = try Data(contentsOf: sourceURL)
+        let decoded = try JSONDecoder().decode(PulseConfiguration.self, from: data)
+        try validate(decoded)
+
+        // Write imported config to the standard location.
+        let directory = fileURL.deletingLastPathComponent()
+        if !FileManager.default.fileExists(atPath: directory.path()) {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        }
+        try data.write(to: fileURL, options: .atomic)
+
+        configuration = decoded
+        lastError = nil
+        logger.info("Configuration imported from \(sourceURL.path())")
+        onChange?(decoded)
     }
 
     // MARK: - Loading

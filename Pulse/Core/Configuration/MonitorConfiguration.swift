@@ -2,7 +2,7 @@ import Foundation
 
 // MARK: - Root Configuration
 
-/// Root configuration loaded from `~/.config/isup/config.json`.
+/// Root configuration loaded from `~/.config/pulse/config.json`.
 struct PulseConfiguration: Codable, Sendable, Equatable {
     /// Schema version identifier.
     var version: String
