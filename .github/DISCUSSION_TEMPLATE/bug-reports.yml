@@ -1,0 +1,93 @@
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        > [!IMPORTANT]
+        > Please search existing [Discussions](https://github.com/jsattler/Pulse/discussions?discussions_q=category%3A%22Bug+Reports%22) and [Issues](https://github.com/jsattler/Pulse/issues?q=sort%3Areactions-desc) before opening a new bug report to avoid duplicates.
+
+  - type: markdown
+    attributes:
+      value: "# Bug Report"
+
+  - type: input
+    attributes:
+      label: Version
+      description: What version of Pulse are you running? You can find this in Settings > General.
+      placeholder: "v2026.2"
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: macOS Version
+      description: What version of macOS are you running? You can find this in  > About This Mac.
+      placeholder: "26.1 (Tahoe)"
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: What happened?
+      description: Describe the bug you encountered.
+      placeholder: Tell us what you see!
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: What did you expect to happen?
+      description: Describe the behavior you expected.
+      placeholder: Tell us what you expected!
+    validations:
+      required: false
+
+  - type: textarea
+    attributes:
+      label: Steps to Reproduce
+      description: How can we reproduce this issue?
+      placeholder: |
+        1. Open Pulse
+        2. Go to...
+        3. Click on...
+        4. See error...
+    validations:
+      required: false
+
+  - type: markdown
+    attributes:
+      value: "# Configuration"
+
+  - type: dropdown
+    attributes:
+      label: Monitoring Provider
+      description: Which monitoring provider(s) are you using?
+      options:
+        - Atlassian
+        - Better Stack
+        - HTTP
+        - Multiple
+        - Not sure
+    validations:
+      required: true
+
+  - type: checkboxes
+    attributes:
+      label: Pulse Features
+      description: Which features are active?
+      options:
+        - label: Menu Bar Status
+        - label: Notch Glow
+        - label: Heartbeat Graph
+        - label: Launch at Login
+
+  - type: markdown
+    attributes:
+      value: "# Acknowledgements"
+
+  - type: checkboxes
+    attributes:
+      label: "I confirm that:"
+      options:
+        - label: I have searched existing Discussions and Issues and this is not a duplicate.
+          required: true

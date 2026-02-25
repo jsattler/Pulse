@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Feature / Idea
+    url: https://github.com/jsattler/Pulse/discussions/new?category=ideas
+    about: Suggest a new feature or improvement. A discussion template will guide you through providing the details we need.
+  - name: Bug Report
+    url: https://github.com/jsattler/Pulse/discussions/new?category=bug-reports
+    about: Report a bug or unexpected behavior. A discussion template will guide you through providing the details we need.
+  - name: Q&A
+    url: https://github.com/jsattler/Pulse/discussions/new?category=q-a
+    about: Ask questions and get help from the community.

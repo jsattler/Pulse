@@ -1,0 +1,64 @@
+name: Pull Request
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '**.swift'
+      - '**.xcodeproj/**'
+      - '.github/workflows/pull-request.yml'
+
+env:
+  APP_NAME: Pulse
+  SCHEME: Pulse
+  XCODE_VERSION: '26.0'
+
+jobs:
+  build:
+    name: Build
+    runs-on: macos-26
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Select Xcode version
+        run: sudo xcode-select -s /Applications/Xcode_${{ env.XCODE_VERSION }}.app
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Build application
+        run: |
+          xcodebuild build \
+            -project "${{ env.APP_NAME }}.xcodeproj" \
+            -scheme "${{ env.SCHEME }}" \
+            -configuration Debug \
+            -destination "platform=macOS" \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            | xcbeautify --renderer github-actions || true
+
+  test:
+    name: Test
+    runs-on: macos-26
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Select Xcode version
+        run: sudo xcode-select -s /Applications/Xcode_${{ env.XCODE_VERSION }}.app
+
+      - name: Run tests
+        run: |
+          xcodebuild test \
+            -project "${{ env.APP_NAME }}.xcodeproj" \
+            -scheme "${{ env.SCHEME }}" \
+            -configuration Debug \
+            -destination "platform=macOS" \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            | xcbeautify --renderer github-actions || true

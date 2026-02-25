@@ -1,0 +1,179 @@
+name: Build Pre-release
+
+on:
+  release:
+    types: [prereleased]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g., 1.0.0-beta.1)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+env:
+  APP_NAME: Pulse
+  SCHEME: Pulse
+  XCODE_VERSION: '26.0'
+
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Select Xcode version
+        run: sudo xcode-select -s /Applications/Xcode_${{ env.XCODE_VERSION }}.app
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Import signing certificate
+        env:
+          APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          # Create temporary keychain
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+          KEYCHAIN_PASSWORD=$(openssl rand -base64 32)
+
+          # Create keychain
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          # Import certificate
+          CERTIFICATE_PATH=$RUNNER_TEMP/certificate.p12
+          echo "$APPLE_CERTIFICATE_BASE64" | base64 --decode -o "$CERTIFICATE_PATH"
+          security import "$CERTIFICATE_PATH" -P "$APPLE_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security list-keychain -d user -s "$KEYCHAIN_PATH"
+
+          # Clean up certificate file
+          rm "$CERTIFICATE_PATH"
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "release" ]; then
+            VERSION="${{ github.event.release.tag_name }}"
+            # Remove 'v' prefix if present
+            VERSION="${VERSION#v}"
+          else
+            VERSION="${{ inputs.version }}"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Building pre-release version: $VERSION"
+
+      - name: Determine build identifiers
+        id: build
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          echo "marketing_version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_number=$VERSION" >> $GITHUB_OUTPUT
+          echo "git_sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+          echo "Marketing version: $VERSION"
+          echo "Build number: $VERSION"
+          echo "Git SHA: $SHORT_SHA"
+
+      - name: Set git SHA in Info.plist
+        run: |
+          /usr/libexec/PlistBuddy -c "Add :GitSHA string ${{ steps.build.outputs.git_sha }}" "Pulse/Info.plist"
+
+      - name: Build application
+        run: |
+          set -o pipefail
+          xcodebuild archive \
+            -project "${{ env.APP_NAME }}.xcodeproj" \
+            -scheme "${{ env.SCHEME }}" \
+            -configuration Release \
+            -archivePath "$RUNNER_TEMP/${{ env.APP_NAME }}.xcarchive" \
+            -destination "generic/platform=macOS" \
+            DEVELOPMENT_TEAM="${{ secrets.APPLE_TEAM_ID }}" \
+            CODE_SIGN_IDENTITY="Developer ID Application" \
+            CODE_SIGN_STYLE=Manual \
+            OTHER_CODE_SIGN_FLAGS="--timestamp --options=runtime" \
+            MARKETING_VERSION="${{ steps.build.outputs.marketing_version }}" \
+            CURRENT_PROJECT_VERSION="${{ steps.build.outputs.build_number }}" \
+            | xcbeautify --renderer github-actions
+
+      - name: Export application
+        run: |
+          # Create export options plist
+          cat > "$RUNNER_TEMP/ExportOptions.plist" << EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>method</key>
+              <string>developer-id</string>
+              <key>teamID</key>
+              <string>${{ secrets.APPLE_TEAM_ID }}</string>
+              <key>signingStyle</key>
+              <string>manual</string>
+              <key>signingCertificate</key>
+              <string>Developer ID Application</string>
+          </dict>
+          </plist>
+          EOF
+
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/${{ env.APP_NAME }}.xcarchive" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist"
+
+      - name: Create DMG
+        run: |
+          APP_PATH="$RUNNER_TEMP/export/${{ env.APP_NAME }}.app"
+          DMG_PATH="$RUNNER_TEMP/${{ env.APP_NAME }}-${{ steps.version.outputs.version }}-arm64.dmg"
+
+          # Create temporary directory for DMG contents
+          DMG_TEMP="$RUNNER_TEMP/dmg-contents"
+          mkdir -p "$DMG_TEMP"
+
+          # Copy app to temporary directory
+          cp -R "$APP_PATH" "$DMG_TEMP/"
+
+          # Create symbolic link to Applications
+          ln -s /Applications "$DMG_TEMP/Applications"
+
+          # Create DMG
+          hdiutil create -volname "${{ env.APP_NAME }}" \
+            -srcfolder "$DMG_TEMP" \
+            -ov -format UDZO \
+            "$DMG_PATH"
+
+          # Clean up
+          rm -rf "$DMG_TEMP"
+
+          echo "DMG_PATH=$DMG_PATH" >> $GITHUB_ENV
+
+      - name: Upload DMG artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.APP_NAME }}-${{ steps.version.outputs.version }}-arm64.dmg
+          path: ${{ env.DMG_PATH }}
+          if-no-files-found: error
+
+      - name: Upload to pre-release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ github.event.release.tag_name }}" \
+            "${{ env.DMG_PATH }}" \
+            --clobber
+
+      - name: Clean up keychain
+        if: always()
+        run: |
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+          if [ -f "$KEYCHAIN_PATH" ]; then
+            security delete-keychain "$KEYCHAIN_PATH"
+          fi
