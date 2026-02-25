@@ -5,12 +5,13 @@ import ServiceManagement
 struct SettingsView: View {
     var configManager: ConfigManager
     var glowSettings: GlowSettings
+    var notificationManager: NotificationManager
     var faviconStore: FaviconStore?
 
     var body: some View {
         TabView {
             Tab("General", systemImage: "gear") {
-                GeneralSettingsView(glowSettings: glowSettings)
+                GeneralSettingsView(glowSettings: glowSettings, notificationManager: notificationManager)
             }
 
             Tab("Services", systemImage: "server.rack") {
@@ -21,10 +22,11 @@ struct SettingsView: View {
     }
 }
 
-/// General settings tab containing launch-at-login and notch glow options.
+/// General settings tab containing launch-at-login, notch glow, and notification options.
 struct GeneralSettingsView: View {
     @State private var launchAtLoginManager = LaunchAtLoginManager()
     var glowSettings: GlowSettings
+    var notificationManager: NotificationManager
 
     var body: some View {
         Form {
@@ -48,7 +50,39 @@ struct GeneralSettingsView: View {
                     }
                 }
             }
+
+            Section("Notifications") {
+                Toggle(
+                    "Enable Notifications",
+                    isOn: Bindable(notificationManager).isEnabled
+                )
+                .tint(.accentColor)
+
+                if notificationManager.isEnabled {
+                    Text("Status Events")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+
+                    ForEach(NotificationManager.selectableStatuses, id: \.self) { status in
+                        Toggle(status.label, isOn: statusBinding(for: status))
+                            .toggleStyle(.checkbox)
+                    }
+                }
+            }
         }
         .formStyle(.grouped)
+    }
+
+    private func statusBinding(for status: MonitorStatus) -> Binding<Bool> {
+        Binding(
+            get: { notificationManager.notifiableStatuses.contains(status) },
+            set: { isOn in
+                if isOn {
+                    notificationManager.notifiableStatuses.insert(status)
+                } else {
+                    notificationManager.notifiableStatuses.remove(status)
+                }
+            }
+        )
     }
 }

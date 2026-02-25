@@ -1,12 +1,25 @@
 {
   "fill" : {
-    "automatic-gradient" : "extended-srgb:0.00000,0.53333,1.00000,1.00000"
+    "automatic-gradient" : "srgb:0.15012,1.00000,0.00000,0.00000"
   },
   "groups" : [
     {
       "blur-material" : null,
+      "hidden-specializations" : [
+        {
+          "idiom" : "square",
+          "value" : false
+        }
+      ],
       "layers" : [
         {
+          "glass" : true,
+          "hidden-specializations" : [
+            {
+              "idiom" : "square",
+              "value" : false
+            }
+          ],
           "image-name" : "Union.svg",
           "name" : "Union"
         },
@@ -44,6 +57,7 @@
           "name" : "Background"
         }
       ],
+      "lighting" : "individual",
       "shadow" : {
         "kind" : "neutral",
         "opacity" : 0.5

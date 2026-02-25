@@ -6,5 +6,11 @@
 	<string>Pulse needs local network access to monitor the health of services on your network.</string>
 	<key>NSUserNotificationUsageDescription</key>
 	<string>Pulse sends notifications when a monitored service changes status.</string>
+	<key>SUFeedURL</key>
+	<string>https://github.com/jsattler/Pulse/releases/latest/download/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>S6Ur/b10aWYMFGiGeIR8D/awiMWAxTUCniVffEj7oq0=</string>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
 </dict>
 </plist>

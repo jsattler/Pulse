@@ -23,6 +23,11 @@ final class MonitorEngine {
     /// Favicon store for triggering fetches when website URLs are resolved.
     var faviconStore: FaviconStore?
 
+    /// Called when a monitor transitions between statuses.
+    /// Parameters: provider name, monitor display name, old status, new status.
+    @ObservationIgnored
+    var onStatusChange: ((_ providerName: String, _ displayName: String, _ oldStatus: MonitorStatus, _ newStatus: MonitorStatus) -> Void)?
+
     /// The worst status across all monitors.
     var aggregateStatus: MonitorStatus {
         let allStates = statesByProvider.values.flatMap { $0 }
@@ -261,6 +266,8 @@ final class MonitorEngine {
         )
 
         if let index = statesByProvider[key.providerName]?.firstIndex(where: { $0.id == stateID }) {
+            let oldStatus = statesByProvider[key.providerName]![index].status
+
             statesByProvider[key.providerName]![index].status = result.status
             statesByProvider[key.providerName]![index].lastResult = result
             appendRecentResult(result, at: &statesByProvider[key.providerName]![index])
@@ -268,6 +275,11 @@ final class MonitorEngine {
                 statesByProvider[key.providerName]![index].consecutiveFailures = 0
             } else {
                 statesByProvider[key.providerName]![index].consecutiveFailures += 1
+            }
+
+            if oldStatus != result.status {
+                let displayName = statesByProvider[key.providerName]![index].displayName
+                onStatusChange?(key.providerName, displayName, oldStatus, result.status)
             }
         }
     }
@@ -315,6 +327,11 @@ final class MonitorEngine {
                 monitorType: monitorType
             )
             upsertState(state, forProvider: key.providerName)
+
+            let oldStatus = existing?.status ?? .unknown
+            if oldStatus != component.result.status {
+                onStatusChange?(key.providerName, component.componentName, oldStatus, component.result.status)
+            }
         }
     }
 
