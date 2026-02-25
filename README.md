@@ -1,8 +1,6 @@
 <p align="center">
-  <img src="website/public/Pulse-iOS-Default-1024x1024@1x.png" alt="Pulse Logo" width="120">
+  <img src="website/public/header.png" alt="Pulse Logo">
 </p>
-
-<h1 align="center">Pulse</h1>
 
 <p align="center">
     A beautiful, non-intrusive service monitor that lives in your notch.<br>Supports Better Stack, Atlassian Statuspage, and custom HTTP health checks
