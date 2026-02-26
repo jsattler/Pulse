@@ -30,8 +30,7 @@ extension NSScreen {
 
     /// The built-in screen, which is the one most likely to have a notch.
     static var builtIn: NSScreen? {
-        screens.first { $0.displayID == CGMainDisplayID() }
+        screens.first { CGDisplayIsBuiltin($0.displayID) != 0 }
             ?? screens.first { $0.hasNotch }
-            ?? main
     }
 }

@@ -28,6 +28,7 @@ final class NotchController {
     private var glowPanel: NSPanel?
     private var overlayPanel: NSPanel?
     private let logger = Logger(subsystem: "com.sattlerjoshua.Pulse", category: "NotchController")
+    private var screenObservers: [NSObjectProtocol] = []
 
     // Cached geometry
     private var notchWidth: CGFloat = 0
@@ -63,9 +64,11 @@ final class NotchController {
 
         showGlowPanel(screen: screen, notchRect: notchRect)
         showOverlayPanel(screen: screen, notchRect: notchRect)
+        startScreenObservers()
     }
 
     func hide() {
+        stopScreenObservers()
         glowPanel?.orderOut(nil)
         glowPanel = nil
         overlayPanel?.orderOut(nil)
@@ -148,6 +151,47 @@ final class NotchController {
 
         panel.orderFrontRegardless()
         overlayPanel = panel
+    }
+
+    // MARK: - Screen Observers
+
+    private func startScreenObservers() {
+        stopScreenObservers()
+        let center = NotificationCenter.default
+        let workspace = NSWorkspace.shared.notificationCenter
+
+        let screenChanged = center.addObserver(
+            forName: NSApplication.didChangeScreenParametersNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.repositionPanels()
+        }
+        let woke = workspace.addObserver(
+            forName: NSWorkspace.screensDidWakeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            // Screen geometry may not be updated immediately after wake.
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(for: .milliseconds(500))
+                self?.repositionPanels()
+            }
+        }
+        screenObservers = [screenChanged, woke]
+    }
+
+    private func stopScreenObservers() {
+        for observer in screenObservers {
+            NotificationCenter.default.removeObserver(observer)
+            NSWorkspace.shared.notificationCenter.removeObserver(observer)
+        }
+        screenObservers.removeAll()
+    }
+
+    private func repositionPanels() {
+        hide()
+        show()
     }
 
     // MARK: - Helpers
