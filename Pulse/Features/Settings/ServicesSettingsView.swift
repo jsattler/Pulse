@@ -42,10 +42,34 @@ struct ServicesSettingsView: View {
             } header: {
                 Text("Services")
             } footer: {
-                Button("Add Service", systemImage: "plus") {
-                    isAddingProvider = true
+                HStack {
+                    Button("Add Service", systemImage: "plus") {
+                        isAddingProvider = true
+                    }
+                    .buttonStyle(.borderless)
+
+                    Spacer()
+
+                    Button("Open in Finder", systemImage: "folder") {
+                        let fileManager = FileManager.default
+                        let directory = configManager.configDirectoryURL
+
+                        if !fileManager.fileExists(atPath: directory.path()) {
+                            try? fileManager.createDirectory(
+                                at: directory, withIntermediateDirectories: true)
+                        }
+
+                        if fileManager.fileExists(atPath: configManager.fileURL.path()) {
+                            NSWorkspace.shared.selectFile(
+                                configManager.fileURL.path(),
+                                inFileViewerRootedAtPath: directory.path()
+                            )
+                        } else {
+                            NSWorkspace.shared.open(directory)
+                        }
+                    }
+                    .buttonStyle(.borderless)
                 }
-                .buttonStyle(.borderless)
             }
         }
         .formStyle(.grouped)

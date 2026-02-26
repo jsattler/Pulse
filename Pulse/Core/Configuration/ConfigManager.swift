@@ -20,7 +20,7 @@ final class ConfigManager {
     /// Called on the main actor after a configuration is successfully loaded.
     @ObservationIgnored var onChange: ((PulseConfiguration) -> Void)?
 
-    private let fileURL: URL
+    private(set) var fileURL: URL
     private let logger = Logger(subsystem: "com.sattlerjoshua.Pulse", category: "ConfigManager")
     @ObservationIgnored nonisolated(unsafe) private var watchTask: Task<Void, Never>?
 
