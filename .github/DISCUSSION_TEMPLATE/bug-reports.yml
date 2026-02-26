@@ -58,28 +58,13 @@ body:
     attributes:
       value: "# Configuration"
 
-  - type: dropdown
+  - type: input
     attributes:
       label: Monitoring Provider
       description: Which monitoring provider(s) are you using?
-      options:
-        - Atlassian
-        - Better Stack
-        - HTTP
-        - Multiple
-        - Not sure
+      placeholder: "e.g. Better Stack, Atlassian, HTTP"
     validations:
       required: true
-
-  - type: checkboxes
-    attributes:
-      label: Pulse Features
-      description: Which features are active?
-      options:
-        - label: Menu Bar Status
-        - label: Notch Glow
-        - label: Heartbeat Graph
-        - label: Launch at Login
 
   - type: markdown
     attributes:
