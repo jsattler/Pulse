@@ -237,6 +237,8 @@ private final class SafeNSHostingView<Content: View>: NSHostingView<Content> {
         super.layout()
         isInLayout = false
     }
+
+    deinit {}
 }
 
 // MARK: - Glow Panel Wrapper
