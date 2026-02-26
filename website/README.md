@@ -1,33 +1,6 @@
 # Astro Starter Kit: Basics
 
-## Layout
-
-- Navbar: Logo + Title (left), Notch (center), GitHub + GitHub Sponsor + BuyMeACoffee
-  - Navbar should be in the style like a macoOS menu bar, with the notch in the center
-- Hero:
-  - Use the wallpaper to fill the entire viewport
-  - Header (Center and white font)
-  - Subheader (center and muted font)
-  - install instructions ()
-- very basic footer at the bottom.
-
-## Fonts
-
-Normal:
-
-```
-font-family: system-ui, sans-serif;
-font-weight: normal;
-```
-
-Monospace
-
-```
-font-family: 'Nimbus Mono PS', 'Courier New', monospace;
-font-weight: 500;
-```
-
-## 🧞 Commands
+## Commands
 
 All commands are run from the root of the project, from a terminal:
 
