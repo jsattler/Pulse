@@ -75,8 +75,10 @@ final class ConfigManager {
     /// Updates an existing service provider by matching its original name, then saves.
     func updateServiceProvider(originalName: String, with updated: ServiceProvider) throws {
         guard var config = configuration else { return }
-        guard let index = config.serviceProviders.firstIndex(where: { $0.name == originalName }) else {
-            throw ConfigurationError.validationFailed("Service provider '\(originalName)' not found.")
+        guard let index = config.serviceProviders.firstIndex(where: { $0.name == originalName })
+        else {
+            throw ConfigurationError.validationFailed(
+                "Service provider '\(originalName)' not found.")
         }
         config.serviceProviders[index] = updated
         try validate(config)
@@ -100,8 +102,10 @@ final class ConfigManager {
     /// Adds a monitor to a service provider and saves.
     func addMonitor(_ monitor: Monitor, toProviderNamed providerName: String) throws {
         guard var config = configuration else { return }
-        guard let index = config.serviceProviders.firstIndex(where: { $0.name == providerName }) else {
-            throw ConfigurationError.validationFailed("Service provider '\(providerName)' not found.")
+        guard let index = config.serviceProviders.firstIndex(where: { $0.name == providerName })
+        else {
+            throw ConfigurationError.validationFailed(
+                "Service provider '\(providerName)' not found.")
         }
         config.serviceProviders[index].monitors.append(monitor)
         try validate(config)
@@ -117,11 +121,21 @@ final class ConfigManager {
         inProviderNamed providerName: String
     ) throws {
         guard var config = configuration else { return }
-        guard let providerIndex = config.serviceProviders.firstIndex(where: { $0.name == providerName }) else {
-            throw ConfigurationError.validationFailed("Service provider '\(providerName)' not found.")
+        guard
+            let providerIndex = config.serviceProviders.firstIndex(where: {
+                $0.name == providerName
+            })
+        else {
+            throw ConfigurationError.validationFailed(
+                "Service provider '\(providerName)' not found.")
         }
-        guard let monitorIndex = config.serviceProviders[providerIndex].monitors.firstIndex(where: { $0.name == originalName }) else {
-            throw ConfigurationError.validationFailed("Monitor '\(originalName)' not found in provider '\(providerName)'.")
+        guard
+            let monitorIndex = config.serviceProviders[providerIndex].monitors.firstIndex(where: {
+                $0.name == originalName
+            })
+        else {
+            throw ConfigurationError.validationFailed(
+                "Monitor '\(originalName)' not found in provider '\(providerName)'.")
         }
         config.serviceProviders[providerIndex].monitors[monitorIndex] = updated
         try validate(config)
@@ -133,8 +147,13 @@ final class ConfigManager {
     /// Removes a monitor from a service provider and saves.
     func removeMonitor(named monitorName: String, fromProviderNamed providerName: String) throws {
         guard var config = configuration else { return }
-        guard let providerIndex = config.serviceProviders.firstIndex(where: { $0.name == providerName }) else {
-            throw ConfigurationError.validationFailed("Service provider '\(providerName)' not found.")
+        guard
+            let providerIndex = config.serviceProviders.firstIndex(where: {
+                $0.name == providerName
+            })
+        else {
+            throw ConfigurationError.validationFailed(
+                "Service provider '\(providerName)' not found.")
         }
         config.serviceProviders[providerIndex].monitors.removeAll { $0.name == monitorName }
         try validate(config)
@@ -154,7 +173,8 @@ final class ConfigManager {
         // Write imported config to the standard location.
         let directory = fileURL.deletingLastPathComponent()
         if !FileManager.default.fileExists(atPath: directory.path()) {
-            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            try FileManager.default.createDirectory(
+                at: directory, withIntermediateDirectories: true)
         }
         try data.write(to: fileURL, options: .atomic)
 
@@ -166,13 +186,14 @@ final class ConfigManager {
 
     // MARK: - Loading
 
-    /// Loads configuration from disk. Creates a default config if none exists.
+    /// Loads configuration from disk. If no file exists, configuration remains empty.
     func load() {
-        do {
-            if !FileManager.default.fileExists(atPath: fileURL.path()) {
-                try createDefaultConfig()
-            }
+        guard FileManager.default.fileExists(atPath: fileURL.path()) else {
+            logger.info("No configuration file found at \(self.fileURL.path()), starting empty.")
+            return
+        }
 
+        do {
             let data = try Data(contentsOf: fileURL)
             let decoded = try JSONDecoder().decode(PulseConfiguration.self, from: data)
             try validate(decoded)
@@ -231,62 +252,6 @@ final class ConfigManager {
                 }
             }
         }
-    }
-
-    // MARK: - Default Config Creation
-
-    /// Creates the default configuration directory and file if they don't exist.
-    private func createDefaultConfig() throws {
-        let directory = fileURL.deletingLastPathComponent()
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-
-        let defaultConfig = PulseConfiguration(
-            version: "1.0",
-            serviceProviders: [
-                ServiceProvider(
-                    name: "Hacker News",
-                    monitors: [
-                        Monitor(
-                            name: "Homepage",
-                            http: HTTPMonitorConfig(
-                                url: "https://news.ycombinator.com/",
-                                method: "GET",
-                                expectedStatusCodes: [200]
-                            )
-                        )
-                    ]
-                ),
-                ServiceProvider(
-                    name: "Better Stack",
-                    monitors: [
-                        Monitor(
-                            name: "Status Page",
-                            betterstack: StatusPageMonitorConfig(
-                                url: "https://status.betterstack.com"
-                            )
-                        )
-                    ]
-                ),
-                ServiceProvider(
-                    name: "Anthropic",
-                    monitors: [
-                        Monitor(
-                            name: "Claude Status",
-                            atlassian: StatusPageMonitorConfig(
-                                url: "https://status.claude.com"
-                            )
-                        )
-                    ]
-                ),
-            ]
-        )
-
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        let data = try encoder.encode(defaultConfig)
-        try data.write(to: fileURL, options: .atomic)
-
-        logger.info("Created default configuration at \(self.fileURL.path())")
     }
 
     // MARK: - File Watching
