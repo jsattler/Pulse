@@ -24,6 +24,12 @@
 
 ## Installation
 
+### Homebrew
+
+```bash
+brew install --cask jsattler/tap/pulse
+```
+
 ### Direct Download
 
 Download the latest release from [GitHub Releases](https://github.com/jsattler/Pulse/releases/latest) and open `Pulse.dmg`.
