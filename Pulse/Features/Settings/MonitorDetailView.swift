@@ -20,9 +20,9 @@ struct MonitorDetailView: View {
     @State private var httpURL: String = ""
     @State private var httpMethod: String = "GET"
     @State private var expectedStatusCodes: String = "200"
-    @State private var maxLatency: String = ""
-    @State private var checkFrequency: String = ""
-    @State private var failureThreshold: String = ""
+    @State private var maxLatency: String = "2000"
+    @State private var checkFrequency: String = "60"
+    @State private var failureThreshold: String = "1"
 
     // Status page fields
     @State private var statusPageURL: String = ""
@@ -37,8 +37,13 @@ struct MonitorDetailView: View {
         return false
     }
 
+    /// The effective name used when saving. Status page types default to "Status Page".
+    private var effectiveName: String {
+        monitorType.isStatusPage ? "Status Page" : name
+    }
+
     private var canSave: Bool {
-        let trimmedName = name.trimmingCharacters(in: .whitespaces)
+        let trimmedName = effectiveName.trimmingCharacters(in: .whitespaces)
         guard !trimmedName.isEmpty else { return false }
 
         switch monitorType {
@@ -54,12 +59,14 @@ struct MonitorDetailView: View {
     var body: some View {
         Form {
             Section("Monitor") {
-                TextField("Name", text: $name)
-
                 Picker("Type", selection: $monitorType) {
                     ForEach(MonitorType.implemented) { type in
                         Text(type.label).tag(type)
                     }
+                }
+
+                if !monitorType.isStatusPage {
+                    TextField("Name", text: $name, prompt: Text("e.g. HTTP Ping"))
                 }
             }
 
@@ -74,7 +81,7 @@ struct MonitorDetailView: View {
                     failureThreshold: $failureThreshold
                 )
             case .betterstack, .atlassian:
-                StatusPageMonitorSection(url: $statusPageURL)
+                StatusPageMonitorSection(url: $statusPageURL, monitorType: monitorType)
             default:
                 EmptyView()
             }
@@ -120,9 +127,9 @@ struct MonitorDetailView: View {
             httpMethod = http.method ?? "GET"
             expectedStatusCodes = http.expectedStatusCodes?
                 .map(String.init).joined(separator: ",") ?? "200"
-            maxLatency = http.maxLatency.map(String.init) ?? ""
-            checkFrequency = http.checkFrequency.map(String.init) ?? ""
-            failureThreshold = http.failureThreshold.map(String.init) ?? ""
+            maxLatency = http.maxLatency.map(String.init) ?? "2000"
+            checkFrequency = http.checkFrequency.map(String.init) ?? "60"
+            failureThreshold = http.failureThreshold.map(String.init) ?? "1"
         }
 
         if let config = monitor.betterstack ?? monitor.atlassian {
@@ -133,7 +140,7 @@ struct MonitorDetailView: View {
     // MARK: - Save
 
     private func save() {
-        let trimmedName = name.trimmingCharacters(in: .whitespaces)
+        let trimmedName = effectiveName.trimmingCharacters(in: .whitespaces)
         var monitor = Monitor(name: trimmedName)
 
         switch monitorType {
@@ -185,7 +192,7 @@ struct HTTPMonitorSection: View {
 
     var body: some View {
         Section("HTTP") {
-            TextField("URL", text: $url)
+            TextField("URL", text: $url, prompt: Text("https://api.example.com"))
 
             Picker("Method", selection: $method) {
                 Text("GET").tag("GET")
@@ -196,11 +203,11 @@ struct HTTPMonitorSection: View {
             TextField("Expected Status Codes", text: $expectedStatusCodes)
                 .help("Comma-separated, e.g. 200,201")
 
-            TextField("Max Latency (ms)", text: $maxLatency)
+            TextField("Max Latency (ms)", text: $maxLatency, prompt: Text("2000"))
 
-            TextField("Check Frequency (seconds)", text: $checkFrequency)
+            TextField("Check Frequency (seconds)", text: $checkFrequency, prompt: Text("60"))
 
-            TextField("Failure Threshold", text: $failureThreshold)
+            TextField("Failure Threshold", text: $failureThreshold, prompt: Text("1"))
         }
     }
 }
@@ -210,10 +217,19 @@ struct HTTPMonitorSection: View {
 /// Form section with fields specific to status page monitors.
 struct StatusPageMonitorSection: View {
     @Binding var url: String
+    var monitorType: MonitorType
+
+    private var urlPlaceholder: String {
+        switch monitorType {
+        case .betterstack: "https://status.example.io/"
+        case .atlassian: "https://status.example.com/"
+        default: "https://status.example.com/"
+        }
+    }
 
     var body: some View {
         Section("Status Page") {
-            TextField("URL", text: $url)
+            TextField("URL", text: $url, prompt: Text(urlPlaceholder))
         }
     }
 }

@@ -91,18 +91,6 @@ struct NotchServiceRow: View {
     @ViewBuilder
     private var actionButtons: some View {
         HStack(spacing: 4) {
-            Button {
-                glowSettings?.toggleSilence(for: providerName)
-            } label: {
-                Image(systemName: isSilenced ? "bell.slash.fill" : "bell.fill")
-                    .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(isSilenced ? 0.8 : 0.4))
-                    .frame(width: 26, height: 26)
-                    .contentShape(.rect)
-            }
-            .buttonStyle(.plain)
-            .help(isSilenced ? "Unmute alerts" : "Mute alerts")
-
             if let statusPageURL {
                 Button {
                     NSWorkspace.shared.open(statusPageURL)
@@ -116,6 +104,18 @@ struct NotchServiceRow: View {
                 .buttonStyle(.plain)
                 .help("Open status page")
             }
+
+            Button {
+                glowSettings?.toggleSilence(for: providerName)
+            } label: {
+                Image(systemName: isSilenced ? "bell.slash.fill" : "bell.fill")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.white.opacity(isSilenced ? 0.8 : 0.4))
+                    .frame(width: 26, height: 26)
+                    .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .help(isSilenced ? "Unmute alerts" : "Mute alerts")
         }
     }
 

@@ -19,8 +19,7 @@
       "description": "Grouped service providers, each containing one or more monitors.",
       "items": {
         "$ref": "#/$defs/serviceProvider"
-      },
-      "minItems": 1
+      }
     }
   },
   "required": ["version", "serviceProviders"],

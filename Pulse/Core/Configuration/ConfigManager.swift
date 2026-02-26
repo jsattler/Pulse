@@ -53,8 +53,14 @@ final class ConfigManager {
             throw ConfigurationError.validationFailed("No configuration loaded to save.")
         }
 
+        let directory = configDirectoryURL
+        if !FileManager.default.fileExists(atPath: directory.path()) {
+            try FileManager.default.createDirectory(
+                at: directory, withIntermediateDirectories: true)
+        }
+
         let encoder = JSONEncoder()
-        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
         let data = try encoder.encode(configuration)
         try data.write(to: fileURL, options: .atomic)
         logger.info("Configuration saved to \(self.fileURL.path())")
@@ -64,7 +70,7 @@ final class ConfigManager {
 
     /// Adds a new service provider and saves.
     func addServiceProvider(_ provider: ServiceProvider) throws {
-        guard var config = configuration else { return }
+        var config = configuration ?? PulseConfiguration(version: "1.0", serviceProviders: [])
         config.serviceProviders.append(provider)
         try validate(config)
         configuration = config

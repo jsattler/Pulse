@@ -46,7 +46,7 @@ struct ServicesSettingsView: View {
                     Button("Add Service", systemImage: "plus") {
                         isAddingProvider = true
                     }
-                    .buttonStyle(.borderless)
+                    .buttonStyle(.bordered)
 
                     Spacer()
 
@@ -68,7 +68,7 @@ struct ServicesSettingsView: View {
                             NSWorkspace.shared.open(directory)
                         }
                     }
-                    .buttonStyle(.borderless)
+                    .buttonStyle(.bordered)
                 }
             }
         }

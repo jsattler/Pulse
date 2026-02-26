@@ -34,8 +34,8 @@ struct ServiceDetailView: View {
     var body: some View {
         Form {
             Section("Service") {
-                TextField("Name", text: $name)
-                TextField("Website URL", text: $websiteURL)
+                TextField("Name", text: $name, prompt: Text("e.g. Anthropic"))
+                TextField("Website URL (Optional)", text: $websiteURL, prompt: Text("e.g. https://anthropic.com"))
                     .help("Used to display a favicon. Auto-derived for status page monitors.")
             }
 
@@ -66,7 +66,7 @@ struct ServiceDetailView: View {
                 Button("Add Monitor", systemImage: "plus") {
                     isAddingMonitor = true
                 }
-                .buttonStyle(.borderless)
+                .buttonStyle(.bordered)
             }
 
             if isEditing {

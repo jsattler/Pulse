@@ -53,17 +53,14 @@ struct MenuBarView: View {
 
     private var emptyState: some View {
         VStack(spacing: 8) {
-            Image(systemName: "heart.text.clipboard")
-                .font(.system(size: 24))
-                .foregroundStyle(.secondary)
-
             Text("No Monitors Configured")
                 .font(.system(size: 13, weight: .medium))
 
-            Text("Edit ~/.config/isup/config.json\nto add service monitors.")
-                .font(.system(size: 11))
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
+            Button("Open Settings...") {
+                NSApplication.shared.activate(ignoringOtherApps: true)
+                openSettings()
+            }
+            .controlSize(.small)
         }
         .padding(.vertical, 16)
         .frame(maxWidth: .infinity)
@@ -161,7 +158,7 @@ struct MonitorRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            StatusCircle(status: state.status, size: 20)
+            StatusDot(status: state.status)
 
             Text(state.displayName)
                 .font(.system(size: 13))
@@ -184,23 +181,17 @@ struct MonitorRow: View {
     }
 }
 
-// MARK: - Status Circle
+// MARK: - Status Dot
 
-/// A status indicator showing a status-colored icon on a gray circle.
-struct StatusCircle: View {
+/// A small colored dot indicating the status of a monitor.
+struct StatusDot: View {
     var status: MonitorStatus
-    var size: CGFloat = 24
+    var size: CGFloat = 8
 
     var body: some View {
-        ZStack {
-            Circle()
-                .fill(.gray.opacity(0.2))
-                .frame(width: size, height: size)
-
-            Image(systemName: status.iconName)
-                .font(.system(size: size * 0.45, weight: .medium))
-                .foregroundStyle(status.color)
-        }
+        Circle()
+            .fill(status.color)
+            .frame(width: size, height: size)
     }
 }
 
