@@ -17,7 +17,7 @@ env:
   APP_NAME: Pulse
   SCHEME: Pulse
   XCODE_VERSION: "26.0"
-  SPARKLE_VERSION: "2.7.3"
+  SPARKLE_VERSION: "2.9.0"
 
 jobs:
   build:
