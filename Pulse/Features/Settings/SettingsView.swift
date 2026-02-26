@@ -6,12 +6,17 @@ struct SettingsView: View {
     var configManager: ConfigManager
     var glowSettings: GlowSettings
     var notificationManager: NotificationManager
+    var updaterManager: UpdaterManager
     var faviconStore: FaviconStore?
 
     var body: some View {
         TabView {
             Tab("General", systemImage: "gear") {
-                GeneralSettingsView(glowSettings: glowSettings, notificationManager: notificationManager)
+                GeneralSettingsView(
+                    glowSettings: glowSettings,
+                    notificationManager: notificationManager,
+                    updaterManager: updaterManager
+                )
             }
 
             Tab("Services", systemImage: "server.rack") {
@@ -27,6 +32,16 @@ struct GeneralSettingsView: View {
     @State private var launchAtLoginManager = LaunchAtLoginManager()
     var glowSettings: GlowSettings
     var notificationManager: NotificationManager
+    var updaterManager: UpdaterManager
+
+    @State private var automaticallyChecksForUpdates: Bool
+
+    init(glowSettings: GlowSettings, notificationManager: NotificationManager, updaterManager: UpdaterManager) {
+        self.glowSettings = glowSettings
+        self.notificationManager = notificationManager
+        self.updaterManager = updaterManager
+        self._automaticallyChecksForUpdates = State(initialValue: updaterManager.automaticallyChecksForUpdates)
+    }
 
     var body: some View {
         Form {
@@ -77,8 +92,33 @@ struct GeneralSettingsView: View {
                     }
                 }
             }
+            Section("Software Updates") {
+                Toggle("Automatically check for updates", isOn: $automaticallyChecksForUpdates)
+                    .onChange(of: automaticallyChecksForUpdates) { _, newValue in
+                        updaterManager.automaticallyChecksForUpdates = newValue
+                    }
+
+                LabeledContent("Updates") {
+                    Button("Check for Updates") {
+                        updaterManager.checkForUpdates()
+                    }
+                    .disabled(!updaterManager.canCheckForUpdates)
+                }
+            }
+
+            Section("About") {
+                LabeledContent("Version", value: "v\(appVersion) (\(gitSHA))")
+            }
         }
         .formStyle(.grouped)
+    }
+
+    private var appVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
+    }
+
+    private var gitSHA: String {
+        Bundle.main.infoDictionary?["GitSHA"] as? String ?? "dev"
     }
 
     private func statusBinding(for status: MonitorStatus) -> Binding<Bool> {

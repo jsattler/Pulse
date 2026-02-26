@@ -8,6 +8,7 @@ struct PulseApp: App {
     @State private var glowSettings = GlowSettings()
     @State private var faviconStore = FaviconStore()
     @State private var notificationManager = NotificationManager()
+    @State private var updaterManager = UpdaterManager()
 
     var body: some Scene {
         MenuBarExtra {
@@ -26,6 +27,7 @@ struct PulseApp: App {
                 configManager: configManager,
                 glowSettings: glowSettings,
                 notificationManager: notificationManager,
+                updaterManager: updaterManager,
                 faviconStore: faviconStore
             )
         }
