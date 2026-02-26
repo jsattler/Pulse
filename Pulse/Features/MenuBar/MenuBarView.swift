@@ -21,7 +21,7 @@ struct MenuBarView: View {
 
             // Bottom actions
             MenuBarActionButton(title: "Settings...", systemImage: "gear") {
-                NSApplication.shared.activate(ignoringOtherApps: true)
+                NSApplication.shared.activate()
                 openSettings()
             }
 
@@ -57,7 +57,7 @@ struct MenuBarView: View {
                 .font(.system(size: 13, weight: .medium))
 
             Button("Open Settings...") {
-                NSApplication.shared.activate(ignoringOtherApps: true)
+                NSApplication.shared.activate()
                 openSettings()
             }
             .controlSize(.small)

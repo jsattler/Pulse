@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://isup.sattlerjoshua.com/schema/v1/config.json",
+  "$id": "https://jsattler.github.io/Pulse/schema/v1/config.json",
   "title": "Pulse Configuration",
   "description": "Configuration schema for the Pulse macOS service monitor.",
   "type": "object",

@@ -57,11 +57,12 @@ final class NotificationManager {
 
     /// Requests notification authorization from the system.
     func requestPermission() {
-        center.requestAuthorization(options: [.alert, .sound]) { granted, error in
-            if let error {
-                self.logger.error("Notification permission error: \(error.localizedDescription)")
-            } else {
-                self.logger.info("Notification permission granted: \(granted)")
+        Task {
+            do {
+                let granted = try await center.requestAuthorization(options: [.alert, .sound])
+                logger.info("Notification permission granted: \(granted)")
+            } catch {
+                logger.error("Notification permission error: \(error.localizedDescription)")
             }
         }
     }
@@ -87,9 +88,11 @@ final class NotificationManager {
         let identifier = "\(providerName)-\(monitorDisplayName)-\(status.rawValue)"
         let request = UNNotificationRequest(identifier: identifier, content: content, trigger: nil)
 
-        center.add(request) { error in
-            if let error {
-                self.logger.error("Failed to deliver notification: \(error.localizedDescription)")
+        Task {
+            do {
+                try await center.add(request)
+            } catch {
+                logger.error("Failed to deliver notification: \(error.localizedDescription)")
             }
         }
     }

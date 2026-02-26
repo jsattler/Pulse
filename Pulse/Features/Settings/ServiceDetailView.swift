@@ -107,7 +107,7 @@ struct ServiceDetailView: View {
                 }
             })
         }
-        .alert("Error", isPresented: .constant(errorMessage != nil)) {
+        .alert("Error", isPresented: showErrorBinding) {
             Button("OK") { errorMessage = nil }
         } message: {
             if let errorMessage {
@@ -115,6 +115,13 @@ struct ServiceDetailView: View {
             }
         }
         .onAppear { populateFromExisting() }
+    }
+
+    private var showErrorBinding: Binding<Bool> {
+        Binding(
+            get: { errorMessage != nil },
+            set: { if !$0 { errorMessage = nil } }
+        )
     }
 
     /// Creates a binding that maps `editingMonitorIndex` to the corresponding `Monitor`.

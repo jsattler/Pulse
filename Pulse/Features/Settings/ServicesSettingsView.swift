@@ -82,13 +82,20 @@ struct ServicesSettingsView: View {
                 mode: .edit(providerName: provider.name)
             )
         }
-        .alert("Error", isPresented: .constant(errorMessage != nil)) {
+        .alert("Error", isPresented: showErrorBinding) {
             Button("OK") { errorMessage = nil }
         } message: {
             if let errorMessage {
                 Text(errorMessage)
             }
         }
+    }
+
+    private var showErrorBinding: Binding<Bool> {
+        Binding(
+            get: { errorMessage != nil },
+            set: { if !$0 { errorMessage = nil } }
+        )
     }
 
     private func deleteProvider(named name: String) {

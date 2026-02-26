@@ -124,18 +124,6 @@ final class MonitorEngine {
         activeConfig = config
     }
 
-    /// Stops all polling and clears state.
-    func stopAll() {
-        for task in pollTasks.values {
-            task.cancel()
-        }
-        pollTasks.removeAll()
-        statesByProvider.removeAll()
-        websiteURLsByProvider.removeAll()
-        statusPageURLsByProvider.removeAll()
-        activeConfig = nil
-    }
-
     // MARK: - Polling
 
     private func startPolling(provider: ServiceProvider, monitor: Monitor, key: PollKey) {
@@ -265,22 +253,24 @@ final class MonitorEngine {
             monitorName: key.monitorName
         )
 
-        if let index = statesByProvider[key.providerName]?.firstIndex(where: { $0.id == stateID }) {
-            let oldStatus = statesByProvider[key.providerName]![index].status
+        guard var states = statesByProvider[key.providerName],
+              let index = states.firstIndex(where: { $0.id == stateID }) else { return }
 
-            statesByProvider[key.providerName]![index].status = result.status
-            statesByProvider[key.providerName]![index].lastResult = result
-            appendRecentResult(result, at: &statesByProvider[key.providerName]![index])
-            if result.status == .operational {
-                statesByProvider[key.providerName]![index].consecutiveFailures = 0
-            } else {
-                statesByProvider[key.providerName]![index].consecutiveFailures += 1
-            }
+        let oldStatus = states[index].status
 
-            if oldStatus != result.status {
-                let displayName = statesByProvider[key.providerName]![index].displayName
-                onStatusChange?(key.providerName, displayName, oldStatus, result.status)
-            }
+        states[index].status = result.status
+        states[index].lastResult = result
+        appendRecentResult(result, at: &states[index])
+        if result.status == .operational {
+            states[index].consecutiveFailures = 0
+        } else {
+            states[index].consecutiveFailures += 1
+        }
+
+        statesByProvider[key.providerName] = states
+
+        if oldStatus != result.status {
+            onStatusChange?(key.providerName, states[index].displayName, oldStatus, result.status)
         }
     }
 
@@ -343,14 +333,13 @@ final class MonitorEngine {
     }
 
     private func upsertState(_ state: MonitorState, forProvider providerName: String) {
-        if statesByProvider[providerName] == nil {
-            statesByProvider[providerName] = []
-        }
-        if let index = statesByProvider[providerName]!.firstIndex(where: { $0.id == state.id }) {
-            statesByProvider[providerName]![index] = state
+        var states = statesByProvider[providerName, default: []]
+        if let index = states.firstIndex(where: { $0.id == state.id }) {
+            states[index] = state
         } else {
-            statesByProvider[providerName]!.append(state)
+            states.append(state)
         }
+        statesByProvider[providerName] = states
     }
 
     // MARK: - Helpers
@@ -378,13 +367,6 @@ final class MonitorEngine {
         guard let activeMonitor = activeProvider.monitors.first(where: { $0.name == monitor.name }) else {
             return false
         }
-        // Compare by encoding both to JSON — simple and correct.
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = .sortedKeys
-        guard let newData = try? encoder.encode(monitor),
-              let oldData = try? encoder.encode(activeMonitor) else {
-            return false
-        }
-        return newData == oldData
+        return activeMonitor == monitor
     }
 }

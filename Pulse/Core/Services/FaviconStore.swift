@@ -63,22 +63,20 @@ final class FaviconStore {
     ///
     /// `URLSession` is avoided entirely because its internal HTTP/3 QUIC
     /// probing produces `nw_connection` warnings that cannot be suppressed
-    /// via public API.
+    /// via public API. A detached task is used to move the synchronous I/O
+    /// off the main actor.
     private nonisolated func fetchFavicon(host: String) async -> NSImage? {
         guard let url = URL(string: "https://www.google.com/s2/favicons?domain=\(host)&sz=64") else {
             return nil
         }
 
-        return await withCheckedContinuation { continuation in
-            DispatchQueue.global(qos: .utility).async {
-                guard let data = try? Data(contentsOf: url),
-                      let image = NSImage(data: data),
-                      image.isValid else {
-                    continuation.resume(returning: nil)
-                    return
-                }
-                continuation.resume(returning: image)
+        return await Task.detached(priority: .utility) {
+            guard let data = try? Data(contentsOf: url),
+                  let image = NSImage(data: data),
+                  image.isValid else {
+                return nil as NSImage?
             }
-        }
+            return image
+        }.value
     }
 }

@@ -215,8 +215,27 @@ final class NotchController {
         panel.hasShadow = false
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
         panel.level = .screenSaver
-        panel.contentView = NSHostingView(rootView: content)
+        panel.contentView = SafeNSHostingView(rootView: content)
         return panel
+    }
+}
+
+// MARK: - Safe Hosting View
+
+/// An `NSHostingView` subclass that guards against layout recursion.
+///
+/// When SwiftUI content inside a borderless `NSPanel` triggers a
+/// layout pass, `NSHostingView` can call `layoutSubtreeIfNeeded`
+/// recursively. This subclass detects the re-entrant call and
+/// defers it to the next run-loop turn instead of recursing.
+private final class SafeNSHostingView<Content: View>: NSHostingView<Content> {
+    private var isInLayout = false
+
+    override func layout() {
+        guard !isInLayout else { return }
+        isInLayout = true
+        super.layout()
+        isInLayout = false
     }
 }
 

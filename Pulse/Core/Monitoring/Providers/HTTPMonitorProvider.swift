@@ -77,8 +77,8 @@ struct HTTPMonitorProvider: MonitorProvider {
 
         let message: String? = if !codeMatch {
             "HTTP \(httpResponse.statusCode) (expected \(expectedCodes))"
-        } else if latencyExceeded {
-            "Latency \(elapsed) exceeds \(config.maxLatency!)ms threshold"
+        } else if latencyExceeded, let maxLatency = config.maxLatency {
+            "Latency \(elapsed) exceeds \(maxLatency)ms threshold"
         } else {
             nil
         }

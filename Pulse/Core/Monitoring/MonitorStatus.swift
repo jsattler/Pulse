@@ -13,7 +13,13 @@ enum MonitorStatus: String, Sendable, Comparable {
 
     /// SwiftUI display color for this status.
     var color: Color {
-        Color(nsColor: nsColor)
+        switch self {
+        case .unknown: Color(red: 1.0, green: 1.0, blue: 1.0)
+        case .operational: Color(red: 0.20, green: 0.84, blue: 0.29)
+        case .degraded: Color(red: 1.0, green: 0.62, blue: 0.04)
+        case .downtime: Color(red: 1.0, green: 0.23, blue: 0.19)
+        case .maintenance: Color(red: 0.35, green: 0.56, blue: 0.97)
+        }
     }
 
     /// AppKit display color for this status, using explicit sRGB values
@@ -49,17 +55,6 @@ enum MonitorStatus: String, Sendable, Comparable {
         case .degraded: "Degraded"
         case .downtime: "Downtime"
         case .maintenance: "Maintenance"
-        }
-    }
-
-    /// SF Symbol name representing this status.
-    var iconName: String {
-        switch self {
-        case .unknown: "questionmark"
-        case .operational: "arrowshape.up"
-        case .degraded: "arrowshape.forward"
-        case .downtime: "arrowshape.down"
-        case .maintenance: "wrench"
         }
     }
 

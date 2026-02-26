@@ -1,5 +1,4 @@
 import SwiftUI
-import ServiceManagement
 
 /// The settings window for Pulse.
 struct SettingsView: View {
