@@ -9,9 +9,13 @@ struct NotchGlowView: View {
     let notchWidth: CGFloat
     let notchHeight: CGFloat
     var isPulseEnabled: Bool = true
+    /// Multiplier applied to the blur radius and spread. Range 0.5–2.0.
+    var glowSize: Double = 1.0
 
-    private let blurRadius: CGFloat = 12
+    private let baseBlurRadius: CGFloat = 12
     private let cornerRadius: CGFloat = 12
+
+    private var blurRadius: CGFloat { baseBlurRadius * glowSize }
 
     /// Drives the breathing opacity. Toggled by an async loop so the
     /// animation can be cleanly cancelled when pulsing is disabled.

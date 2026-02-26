@@ -20,7 +20,7 @@ enum MonitorStatus: String, Sendable, Comparable {
     /// so the color renders correctly on transparent NSPanel backgrounds.
     var nsColor: NSColor {
         switch self {
-        case .unknown: NSColor(srgbRed: 1.0, green: 0.0, blue: 0.0, alpha: 1)
+        case .unknown: NSColor(srgbRed: 1.0, green: 1.0, blue: 1.0, alpha: 1)
         case .operational: NSColor(srgbRed: 0.20, green: 0.84, blue: 0.29, alpha: 1)
         case .degraded: NSColor(srgbRed: 1.0, green: 0.62, blue: 0.04, alpha: 1)
         case .downtime: NSColor(srgbRed: 1.0, green: 0.23, blue: 0.19, alpha: 1)

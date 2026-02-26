@@ -28,6 +28,7 @@ final class GlowSettings {
         static let hideGlow = "hideGlow"
         static let disablePulse = "disablePulse"
         static let silencedProviders = "silencedProviders"
+        static let glowSize = "glowSize"
     }
 
     private let defaults: UserDefaults
@@ -36,16 +37,18 @@ final class GlowSettings {
         self.defaults = defaults
 
         // Register defaults so first-launch values are sensible:
-        // glow always visible, pulse disabled when operational.
+        // glow always visible, pulse disabled when operational, size at 1.0.
         defaults.register(defaults: [
             Key.hideGlow: GlowCondition.never.rawValue,
             Key.disablePulse: GlowCondition.whenOperational.rawValue,
+            Key.glowSize: 1.0,
         ])
 
         // Hydrate stored fields from persisted values.
         _hideGlow = GlowCondition(rawValue: defaults.string(forKey: Key.hideGlow) ?? "") ?? .never
         _disablePulse = GlowCondition(rawValue: defaults.string(forKey: Key.disablePulse) ?? "") ?? .whenOperational
         _silencedProviders = Set(defaults.stringArray(forKey: Key.silencedProviders) ?? [])
+        _glowSize = defaults.double(forKey: Key.glowSize)
     }
 
     // MARK: - Settings
@@ -66,6 +69,11 @@ final class GlowSettings {
     /// from the aggregate glow colour.
     var silencedProviders: Set<String> {
         didSet { defaults.set(Array(silencedProviders), forKey: Key.silencedProviders) }
+    }
+
+    /// A multiplier for the glow spread size. Range 0.5–2.0, default 1.0.
+    var glowSize: Double {
+        didSet { defaults.set(glowSize, forKey: Key.glowSize) }
     }
 
     /// Whether a given provider is currently silenced.

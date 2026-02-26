@@ -49,6 +49,14 @@ struct GeneralSettingsView: View {
                         Text(condition.rawValue).tag(condition)
                     }
                 }
+
+                Slider(value: Bindable(glowSettings).glowSize, in: 0.5...2.0) {
+                    Text("Glow Size")
+                } minimumValueLabel: {
+                    Text("S")
+                } maximumValueLabel: {
+                    Text("L")
+                }
             }
 
             Section("Notifications") {

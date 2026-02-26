@@ -25,7 +25,7 @@ final class NotchController {
     /// Shared favicon store for displaying cached favicons.
     var faviconStore: FaviconStore?
 
-    private var glowPanel: NSPanel?
+    fileprivate var glowPanel: NSPanel?
     private var overlayPanel: NSPanel?
     private let logger = Logger(subsystem: "com.sattlerjoshua.Pulse", category: "NotchController")
     private var screenObservers: [NSObjectProtocol] = []
@@ -86,32 +86,37 @@ final class NotchController {
     // MARK: - Glow Panel
 
     private func showGlowPanel(screen: NSScreen, notchRect: NSRect) {
-        // Margin for the blur spread (blur radius ~10pt needs room).
-        // Bottom margin must be large enough for the blur to fully fade out.
-        let margin: CGFloat = 24
-        let bottomMargin: CGFloat = 48
-        let panelWidth = notchWidth + margin * 2
-        let panelHeight = hardwareNotchHeight + bottomMargin
-
-        // Top of panel = top of screen.
-        let x = notchRect.midX - panelWidth / 2
-        let y = screen.frame.maxY - panelHeight
+        let glowSize = glowSettings?.glowSize ?? 1.0
+        let frame = glowPanelFrame(notchMidX: notchRect.midX, screenMaxY: screen.frame.maxY, glowSize: glowSize)
 
         let glowView = NotchGlowPanelView(
             controller: self,
             notchWidth: notchWidth,
             notchHeight: hardwareNotchHeight,
+            notchMidX: notchRect.midX,
+            screenMaxY: screen.frame.maxY,
             glowSettings: glowSettings
         )
 
-        let panel = makePanel(
-            frame: NSRect(x: x, y: y, width: panelWidth, height: panelHeight),
-            content: glowView
-        )
+        let panel = makePanel(frame: frame, content: glowView)
         panel.ignoresMouseEvents = true
 
         panel.orderFrontRegardless()
         glowPanel = panel
+    }
+
+    /// Computes the glow panel frame, scaling margins with `glowSize` so the
+    /// blur never clips at the panel boundary.
+    func glowPanelFrame(notchMidX: CGFloat, screenMaxY: CGFloat, glowSize: CGFloat) -> NSRect {
+        // Base margins sized for the default blur radius (12pt).
+        // Scaled by glowSize so larger blurs always fit within the panel.
+        let margin: CGFloat = 24 * glowSize
+        let bottomMargin: CGFloat = 48 * glowSize
+        let panelWidth = notchWidth + margin * 2
+        let panelHeight = hardwareNotchHeight + bottomMargin
+        let x = notchMidX - panelWidth / 2
+        let y = screenMaxY - panelHeight
+        return NSRect(x: x, y: y, width: panelWidth, height: panelHeight)
     }
 
     // MARK: - Overlay Panel
@@ -165,7 +170,9 @@ final class NotchController {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.repositionPanels()
+            Task { @MainActor [weak self] in
+                self?.repositionPanels()
+            }
         }
         let woke = workspace.addObserver(
             forName: NSWorkspace.screensDidWakeNotification,
@@ -222,6 +229,8 @@ private struct NotchGlowPanelView: View {
     let controller: NotchController
     let notchWidth: CGFloat
     let notchHeight: CGFloat
+    let notchMidX: CGFloat
+    let screenMaxY: CGFloat
     var glowSettings: GlowSettings?
 
     /// Aggregate status, excluding silenced providers.
@@ -264,14 +273,25 @@ private struct NotchGlowPanelView: View {
     }
 
     var body: some View {
+        let glowSize = glowSettings?.glowSize ?? 1.0
         NotchGlowView(
             glowColor: glowColor,
             notchWidth: notchWidth,
             notchHeight: notchHeight,
-            isPulseEnabled: shouldPulse
+            isPulseEnabled: shouldPulse,
+            glowSize: glowSize
         )
         .opacity(controller.isOverlayExpanded || !isGlowVisible ? 0 : 1)
         .animation(.easeInOut(duration: 0.2), value: controller.isOverlayExpanded)
         .animation(.easeInOut(duration: 0.3), value: isGlowVisible)
+        .onChange(of: glowSize) { _, newSize in
+            guard let panel = controller.glowPanel else { return }
+            let frame = controller.glowPanelFrame(
+                notchMidX: notchMidX,
+                screenMaxY: screenMaxY,
+                glowSize: newSize
+            )
+            panel.setFrame(frame, display: true, animate: false)
+        }
     }
 }
