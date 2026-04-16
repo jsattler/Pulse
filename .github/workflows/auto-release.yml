@@ -1,0 +1,81 @@
+name: Auto Release
+
+on:
+  push:
+    branches: [ main ]
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Select Xcode version
+        run: sudo xcode-select -s /Applications/Xcode_16.0.app
+
+      - name: Determine version
+        id: version
+        run: |
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+          else
+            # Auto-versioning: vYYYY.MM.DD.RUN_NUMBER
+            VERSION="v$(date +'%Y.%m.%d').${{ github.run_number }}"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Build version: $VERSION"
+
+      - name: Build application
+        run: |
+          # Build without signing for CI (unless certificates are provided)
+          xcodebuild build \
+            -project Pulse.xcodeproj \
+            -scheme Pulse \
+            -configuration Release \
+            -derivedDataPath Build \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            MARKETING_VERSION="${{ steps.version.outputs.version }}" \
+            CURRENT_PROJECT_VERSION="${{ github.run_number }}"
+
+      - name: Create DMG
+        run: |
+          APP_NAME="Pulse"
+          VERSION="${{ steps.version.outputs.version }}"
+          DMG_NAME="${APP_NAME}-${VERSION}.dmg"
+          
+          # Prepare folder for DMG
+          mkdir -p dist_folder
+          cp -R Build/Build/Products/Release/${APP_NAME}.app dist_folder/
+          ln -s /Applications dist_folder/Applications
+          
+          # Create DMG
+          hdiutil create -volname "${APP_NAME}" \
+            -srcfolder dist_folder \
+            -ov -format UDZO \
+            "${DMG_NAME}"
+          
+          echo "dmg_name=${DMG_NAME}" >> $GITHUB_OUTPUT
+        id: package
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: Pulse ${{ steps.version.outputs.version }}
+          files: ${{ steps.package.outputs.dmg_name }}
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

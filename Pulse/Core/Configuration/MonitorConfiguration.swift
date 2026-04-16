@@ -97,7 +97,7 @@ enum MonitorType: String, Codable, Sendable, CaseIterable, Identifiable {
     }
 
     /// Monitor types that have a fully implemented provider.
-    static let implemented: [MonitorType] = [.http, .betterstack, .atlassian]
+    static let implemented: [MonitorType] = [.http, .tcp, .betterstack, .atlassian]
 
     /// Whether this type monitors a status page rather than probing directly.
     var isStatusPage: Bool {
@@ -155,6 +155,9 @@ struct TCPMonitorConfig: Codable, Sendable, Hashable {
 
     /// Consecutive failures before the monitor is considered down.
     var failureThreshold: Int?
+
+    /// If true, the check will wait for a response from the server (e.g. for SSH banners).
+    var expectResponse: Bool?
 }
 
 // MARK: - Status Page Monitor

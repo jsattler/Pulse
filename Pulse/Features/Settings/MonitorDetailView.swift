@@ -24,6 +24,11 @@ struct MonitorDetailView: View {
     @State private var checkFrequency: String = "60"
     @State private var failureThreshold: String = "1"
 
+    // TCP fields
+    @State private var tcpHost: String = ""
+    @State private var tcpPort: String = "22"
+    @State private var tcpExpectResponse: Bool = false
+
     // Status page fields
     @State private var statusPageURL: String = ""
 
@@ -49,6 +54,8 @@ struct MonitorDetailView: View {
         switch monitorType {
         case .http:
             return !httpURL.trimmingCharacters(in: .whitespaces).isEmpty
+        case .tcp:
+            return !tcpHost.trimmingCharacters(in: .whitespaces).isEmpty && Int(tcpPort) != nil
         case .betterstack, .atlassian:
             return !statusPageURL.trimmingCharacters(in: .whitespaces).isEmpty
         default:
@@ -79,6 +86,14 @@ struct MonitorDetailView: View {
                     maxLatency: $maxLatency,
                     checkFrequency: $checkFrequency,
                     failureThreshold: $failureThreshold
+                )
+            case .tcp:
+                TCPMonitorSection(
+                    host: $tcpHost,
+                    port: $tcpPort,
+                    checkFrequency: $checkFrequency,
+                    failureThreshold: $failureThreshold,
+                    expectResponse: $tcpExpectResponse
                 )
             case .betterstack, .atlassian:
                 StatusPageMonitorSection(url: $statusPageURL, monitorType: monitorType)
@@ -132,6 +147,14 @@ struct MonitorDetailView: View {
             failureThreshold = http.failureThreshold.map(String.init) ?? "1"
         }
 
+        if let tcp = monitor.tcp {
+            tcpHost = tcp.host
+            tcpPort = String(tcp.port)
+            tcpExpectResponse = tcp.expectResponse ?? false
+            checkFrequency = tcp.checkFrequency.map(String.init) ?? "60"
+            failureThreshold = tcp.failureThreshold.map(String.init) ?? "1"
+        }
+
         if let config = monitor.betterstack ?? monitor.atlassian {
             statusPageURL = config.url
         }
@@ -156,6 +179,15 @@ struct MonitorDetailView: View {
                 expectedStatusCodes: codes.isEmpty ? nil : codes,
                 maxLatency: Int(maxLatency),
                 failureThreshold: Int(failureThreshold)
+            )
+
+        case .tcp:
+            monitor.tcp = TCPMonitorConfig(
+                host: tcpHost.trimmingCharacters(in: .whitespaces),
+                port: Int(tcpPort) ?? 0,
+                checkFrequency: Int(checkFrequency),
+                failureThreshold: Int(failureThreshold),
+                expectResponse: tcpExpectResponse
             )
 
         case .betterstack:
@@ -207,6 +239,28 @@ struct HTTPMonitorSection: View {
 
             TextField("Check Frequency (seconds)", text: $checkFrequency, prompt: Text("60"))
 
+            TextField("Failure Threshold", text: $failureThreshold, prompt: Text("1"))
+        }
+    }
+}
+
+// MARK: - TCP Monitor Section
+
+/// Form section with fields specific to TCP monitors.
+struct TCPMonitorSection: View {
+    @Binding var host: String
+    @Binding var port: String
+    @Binding var checkFrequency: String
+    @Binding var failureThreshold: String
+    @Binding var expectResponse: Bool
+
+    var body: some View {
+        Section("TCP / SSH") {
+            TextField("Host", text: $host, prompt: Text("example.com or 1.2.3.4"))
+            TextField("Port", text: $port, prompt: Text("22"))
+            Toggle("Verify Service Handshake", isOn: $expectResponse)
+                .help("If enabled, Pulse waits for the server to send data (e.g. an SSH banner) after connecting.")
+            TextField("Check Frequency (seconds)", text: $checkFrequency, prompt: Text("60"))
             TextField("Failure Threshold", text: $failureThreshold, prompt: Text("1"))
         }
     }
