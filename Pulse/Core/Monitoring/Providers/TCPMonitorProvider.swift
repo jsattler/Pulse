@@ -23,6 +23,7 @@ struct TCPMonitorProvider: MonitorProvider {
         
         return await withCheckedContinuation { continuation in
             connection.stateUpdateHandler = { state in
+                self.logger.debug("TCP state update for \(self.config.host):\(self.config.port): \(String(describing: state))")
                 switch state {
                 case .ready:
                     let alreadyResponded = lock.withLock { isResponded in
@@ -32,6 +33,7 @@ struct TCPMonitorProvider: MonitorProvider {
                     }
                     
                     if !alreadyResponded {
+                        self.logger.info("TCP connection ready for \(self.config.host):\(self.config.port)")
                         connection.cancel()
                         let elapsed = ContinuousClock.now - start
                         continuation.resume(returning: CheckResult(
@@ -48,6 +50,7 @@ struct TCPMonitorProvider: MonitorProvider {
                     }
 
                     if !alreadyResponded {
+                        self.logger.warning("TCP connection failed for \(self.config.host):\(self.config.port): \(error.localizedDescription)")
                         connection.cancel()
                         continuation.resume(returning: CheckResult(
                             status: .downtime,
@@ -55,6 +58,8 @@ struct TCPMonitorProvider: MonitorProvider {
                             message: error.localizedDescription
                         ))
                     }
+                case .waiting(let error):
+                    self.logger.debug("TCP connection waiting for \(self.config.host):\(self.config.port): \(error.localizedDescription)")
                 default:
                     break
                 }
