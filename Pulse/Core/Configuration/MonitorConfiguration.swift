@@ -97,7 +97,7 @@ enum MonitorType: String, Codable, Sendable, CaseIterable, Identifiable {
     }
 
     /// Monitor types that have a fully implemented provider.
-    static let implemented: [MonitorType] = [.http, .betterstack, .atlassian]
+    static let implemented: [MonitorType] = [.http, .tcp, .betterstack, .atlassian]
 
     /// Whether this type monitors a status page rather than probing directly.
     var isStatusPage: Bool {
